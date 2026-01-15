@@ -1,6 +1,16 @@
 <?php
 /**
  * Backup and Restore Utilities
+ * 
+ * Handles database backup creation, compression, restoration,
+ * and backup file management with audit logging.
+ * 
+ * @package MongoDB Admin Panel
+ * @subpackage Includes
+ * @version 1.0.0
+ * @author Development Team
+ * @link https://github.com/frame-dev/MongoDBAdminPanel
+ * @license MIT
  */
 
 // Create full database backup

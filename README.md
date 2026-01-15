@@ -13,23 +13,23 @@ A modern, secure, feature-rich web-based administration interface for MongoDB da
 ## ✨ Key Features
 
 ### Core Functionality
-- 🎯 **Interactive Dashboard** - Live statistics with real-time sync and quick actions
-- 📋 **Browse Documents** - Paginated document viewing with CRUD operations
-- 🔍 **Visual Query Builder** - Build MongoDB queries without JSON syntax
+- 🎯 **Interactive Dashboard** - Live statistics with real-time data and quick actions
+- 📋 **Document Management** - Browse, view, create, edit, and delete documents
+- 🔍 **Dual Query Builder** - Visual query builder and raw JSON query editor
 - ➕ **Add Documents** - Create new documents with template support
 - ✏️ **Edit Documents** - Modify existing documents with validation
-- 🗑️ **Delete Operations** - Remove documents with confirmation
-- 📊 **Data Analytics** - Field frequency analysis and schema detection
+- 📊 **Advanced Analytics** - Field analysis, time series, correlation analysis
+- 📐 **Schema Explorer** - Automatic structure detection and field analysis
 
 ### Advanced Features
-- 📐 **Automatic Schema Detection** - Understand collection structure
-- 💾 **Document Templates** - Save and reuse document structures
-- 🔒 **Enterprise-Grade Security** - CSRF, Rate Limiting, Input Sanitization
-- 🛡️ **Database Backup & Restore** - Automated backup with audit logging
-- 📦 **Bulk Operations** - Efficient batch updates and deletes
-- 📥 **Import/Export** - JSON and CSV support
-- 🎨 **Modern UI** - Glass morphism design with smooth animations
-- 🔐 **Audit Trail** - Complete operation history and security logging
+- 📦 **Bulk Operations** - Field operations, bulk updates, data generation
+- 💾 **Backup & Restore** - One-click database backup with compression
+- 📥 **Import/Export** - JSON/CSV support with bulk import preview
+- 🛠️ **Collection Tools** - Create, rename, clone, drop collections
+- 📇 **Index Management** - Create, view, and drop collection indexes
+- ⚡ **Performance Monitoring** - Query profiling and server statistics
+- 🔒 **Enterprise Security** - CSRF, rate limiting, input sanitization, audit logging
+- 🎨 **Modern UI** - Responsive design with dark/light theme support
 
 [See complete feature list →](FEATURES.md)
 
@@ -49,7 +49,7 @@ A modern, secure, feature-rich web-based administration interface for MongoDB da
 #### 1. Clone or Download Repository
 ```bash
 git clone https://github.com/frame-dev/MongoDBAdminPanel.git
-cd mongodb-admin-panel
+cd MongoDBAdminPanel
 ```
 
 Or download and extract the ZIP file to your web root.
@@ -139,7 +139,7 @@ server {
 ## 📁 Project Structure
 
 ```
-mongodb-admin-panel/
+MongoDBAdminPanel/
 ├── index.php                 # Main application entry point (5600+ lines)
 ├── styles.css               # Enhanced CSS with animations & responsive design
 ├── composer.json            # PHP dependencies configuration
@@ -628,7 +628,7 @@ Solution:
 - [ ] User authentication system
 - [ ] Role-based access control
 - [ ] Query history tracking
-- [ ] Dark mode theme
+- ✅ Dark mode theme
 - [ ] Custom field validators
 
 ### v1.2.0 (Planned Q3 2026)
@@ -653,8 +653,8 @@ Contributions are welcome! To contribute:
 
 1. **Fork the Repository**
    ```bash
-   git clone https://github.com/yourusername/mongodb-admin-panel.git
-   cd mongodb-admin-panel
+   git clone https://github.com/frame-dev/MongoDBAdminPanel.git
+   cd MongoDBAdminPanel
    ```
 
 2. **Create Feature Branch**
@@ -748,9 +748,9 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 - **🔒 Security** - Email security concerns privately
 
 ### Contact Information
-- **GitHub:** [@yourusername](https://github.com/yourusername)
-- **Email:** your.email@example.com
-- **Issues:** [GitHub Issues](https://github.com/yourusername/mongodb-admin-panel/issues)
+- **GitHub:** [frame-dev](https://github.com/frame-dev)
+- **Repository:** [MongoDBAdminPanel](https://github.com/frame-dev/MongoDBAdminPanel)
+- **Issues:** [GitHub Issues](https://github.com/frame-dev/MongoDBAdminPanel/issues)
 
 ---
 
@@ -810,3 +810,13 @@ _Last Updated: January 15, 2026_
 _Version: 1.0.0_  
 _Status: Production Ready_ ✅  
 _Actively Maintained & Supported_
+
+## 📊 Quick Statistics
+
+- **Total Features:** 60+
+- **UI Tabs:** 12 (Dashboard, Browse, Query, Add, Bulk, Tools, Advanced, Performance, Analytics, Schema, Security, Settings)
+- **Core Functions:** 50+ implemented with comprehensive error handling
+- **Security Layers:** 10+ (CSRF, Rate Limiting, Input Sanitization, Query Validation, Audit Logging, SSL Support, Session Management, File Upload Protection)
+- **File Operations:** Import (JSON), Export (JSON/CSV), Backup, Restore
+- **Data Analysis:** Field statistics, Time series, Correlation analysis, Duplicate detection
+- **Code Quality:** 5000+ lines of production code with full documentation

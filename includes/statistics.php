@@ -1,6 +1,16 @@
 <?php
 /**
  * Collection Statistics and Data Retrieval
+ * 
+ * Retrieves collection statistics, field analysis, schema detection,
+ * and data metrics for display in the admin panel.
+ * 
+ * @package MongoDB Admin Panel
+ * @subpackage Includes
+ * @version 1.0.0
+ * @author Development Team
+ * @link https://github.com/frame-dev/MongoDBAdminPanel
+ * @license MIT
  */
 
 // Get collection statistics

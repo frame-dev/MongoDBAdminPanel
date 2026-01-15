@@ -2,7 +2,14 @@
 /**
  * MongoDB Admin Panel - Main Index File
  * 
- * This file serves as the entry point and orchestrates all the modular components
+ * This file serves as the entry point and orchestrates all the modular components.
+ * It handles all tab views, form submissions, and core application logic.
+ * 
+ * @package MongoDB Admin Panel
+ * @version 1.0.0
+ * @author Development Team
+ * @link https://github.com/frame-dev/MongoDBAdminPanel
+ * @license MIT
  */
 
 session_start();

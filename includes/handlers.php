@@ -1,6 +1,16 @@
 <?php
 /**
  * Search, Filter, and Form Handlers
+ * 
+ * Handles form submissions, document operations, bulk operations,
+ * queries, imports, exports, and all user-initiated actions.
+ * 
+ * @package MongoDB Admin Panel
+ * @subpackage Includes
+ * @version 1.0.0
+ * @author Development Team
+ * @link https://github.com/frame-dev/MongoDBAdminPanel
+ * @license MIT
  */
 
 use MongoDB\BSON\ObjectId;

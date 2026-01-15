@@ -1,6 +1,16 @@
 <?php
 /**
  * Database Configuration and Connection
+ * 
+ * Manages MongoDB database connection and collection selection.
+ * Handles connection URI building with authentication support.
+ * 
+ * @package MongoDB Admin Panel
+ * @subpackage Config
+ * @version 1.0.0
+ * @author Development Team
+ * @link https://github.com/frame-dev/MongoDBAdminPanel
+ * @license MIT
  */
 require_once 'config/security.php';
 

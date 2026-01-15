@@ -1,6 +1,16 @@
 <?php
 /**
  * Connection Form Page
+ * 
+ * Displays MongoDB connection form for initial database connection setup.
+ * Handles connection credentials input and validation.
+ * 
+ * @package MongoDB Admin Panel
+ * @subpackage Templates
+ * @version 1.0.0
+ * @author Development Team
+ * @link https://github.com/frame-dev/MongoDBAdminPanel
+ * @license MIT
  */
 require_once 'config/security.php';
 

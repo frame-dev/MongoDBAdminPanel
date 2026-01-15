@@ -1,4 +1,17 @@
 <?php
+/**
+ * HTML Header and Navigation Template
+ * 
+ * Contains HTML head section, CSS/JS includes, navigation menu,
+ * tab system, and main page layout structure.
+ * 
+ * @package MongoDB Admin Panel
+ * @subpackage Templates
+ * @version 1.0.0
+ * @author Development Team
+ * @link https://github.com/frame-dev/MongoDBAdminPanel
+ * @license MIT
+ */
 require_once 'config/security.php';
 ?>
 <!DOCTYPE html>

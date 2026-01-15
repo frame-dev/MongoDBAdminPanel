@@ -1,6 +1,16 @@
 <?php
 /**
  * Security Configuration and Helper Functions
+ * 
+ * Core security functions for CSRF protection, input sanitization, validation,
+ * rate limiting, and audit logging. Implements enterprise-grade security measures.
+ * 
+ * @package MongoDB Admin Panel
+ * @subpackage Config
+ * @version 1.0.0
+ * @author Development Team
+ * @link https://github.com/frame-dev/MongoDBAdminPanel
+ * @license MIT
  */
 
 // Generate CSRF token
