@@ -912,3 +912,598 @@ _Actively Maintained & Supported_
 - **File Operations:** Import (JSON), Export (JSON/CSV), Backup, Restore
 - **Data Analysis:** Field statistics, Time series, Correlation analysis, Duplicate detection
 - **Code Quality:** 5000+ lines of production code with full documentation
+
+---
+
+## 🎓 Advanced Usage Guide
+
+### Working with Collections
+
+#### Switching Collections
+1. Use the **Collection Selector** dropdown in the top navigation
+2. Or click collection names in the **Dashboard** grid
+3. Current collection name displayed in header
+4. All operations apply to currently selected collection
+
+#### Creating New Collections
+1. Go to **Tools** tab → **Collection Management**
+2. Enter collection name (alphanumeric, dash, underscore only)
+3. Click **Create Collection**
+4. Collection appears in selector dropdown
+5. Start adding documents to new collection
+
+#### Cloning Collections
+1. **Tools** tab → **Collection Management** → **Clone Collection**
+2. Select source collection to copy from
+3. Enter target collection name
+4. Check **Copy Indexes** to duplicate indexes too
+5. Click **Clone Collection**
+6. New collection created with all documents and optionally indexes
+
+#### Deleting Collections
+⚠️ **Irreversible Operation** - Data cannot be recovered!
+1. **Tools** tab → **Collection Management** → **Drop Collection**
+2. Select collection from dropdown
+3. Type collection name to confirm
+4. Click **Drop Collection**
+5. Collection permanently deleted
+
+### Advanced Query Techniques
+
+#### Using Regular Expressions
+```json
+{
+  "field": {
+    "$regex": "^search.*term$",
+    "$options": "i"
+  }
+}
+```
+- `^` - Starts with
+- `.*` - Contains any characters
+- `$` - Ends with
+- `i` - Case insensitive
+
+#### Range Queries
+```json
+{
+  "age": {
+    "$gte": 18,
+    "$lte": 65
+  }
+}
+```
+- `$gt` - Greater than
+- `$gte` - Greater than or equal
+- `$lt` - Less than
+- `$lte` - Less than or equal
+
+#### Array Queries
+```json
+{
+  "tags": {
+    "$in": ["mongodb", "database", "nosql"]
+  }
+}
+```
+- `$in` - Value in array
+- `$nin` - Value not in array
+- `$all` - All values present
+
+#### Compound Queries
+```json
+{
+  "$or": [
+    {"status": "active"},
+    {"priority": "high"}
+  ],
+  "$and": [
+    {"age": {"$gt": 25}},
+    {"department": "engineering"}
+  ]
+}
+```
+
+### Template System
+
+#### Creating Templates
+1. **Advanced** tab → **Document Templates**
+2. Enter template name (descriptive identifier)
+3. Write JSON structure with sample values
+4. Click **Save Template**
+5. Template saved to MongoDB `_templates` collection
+
+#### Using Templates
+1. **Add Document** tab
+2. Click template button in "Quick Start" section
+3. Template JSON loads into editor
+4. Replace sample values with actual data
+5. Submit to create document
+
+#### Template Best Practices
+- ✅ Use meaningful names: `user_profile`, `order_template`, `blog_post`
+- ✅ Include all required fields
+- ✅ Add comments in JSON: `"_note": "Enter user email here"`
+- ✅ Use consistent data types
+- ✅ Test template before saving
+- ✅ Update templates as schema evolves
+
+### Bulk Operations
+
+#### Bulk Update Multiple Documents
+1. **Bulk Operations** tab → **Bulk Update**
+2. Enter match field (e.g., `status`)
+3. Enter match value (e.g., `pending`)
+4. Enter update field name
+5. Enter new value
+6. Click **Update All**
+7. Confirm operation
+
+#### Find & Replace
+1. **Bulk Operations** tab → **Find & Replace**
+2. Enter field name to search
+3. Enter regex pattern to find
+4. Enter replacement text
+5. Click **Replace All**
+
+#### Add Field to All Documents
+1. **Bulk Operations** tab → **Field Operations**
+2. Enter field name
+3. Enter default value (or JSON object)
+4. Click **Add Field**
+5. Field added to all documents
+
+#### Remove Field from All Documents
+1. **Bulk Operations** tab → **Field Operations**
+2. Enter field name to remove
+3. Click **Remove Field**
+4. Field removed from all documents
+
+### Data Import & Export
+
+#### Export as JSON
+1. Query Builder or Browse tab
+2. Filter results (optional)
+3. Click **Export JSON** button
+4. File downloads with timestamp
+5. Import into another database or backup
+
+#### Export as CSV
+1. Query Builder tab
+2. Execute query to get data
+3. Click **Export CSV** button
+4. Column headers auto-generated from field names
+5. Nested objects exported as JSON strings
+
+#### Import JSON
+1. **Tools** tab → **Backup & Data Management**
+2. Click **Paste JSON Directly** button
+3. Paste or type JSON array
+4. Click **Preview & Validate**
+5. Review document count and field names
+6. Click **Import Documents**
+
+#### Import CSV
+1. **Tools** tab → **File Upload** section
+2. Select CSV file (max 5 MB)
+3. First row treated as headers
+4. Click **Upload**
+5. Documents created with headers as field names
+
+### Index Management
+
+#### Create Simple Index
+1. **Tools** tab → **Index Management**
+2. Enter field name
+3. Select order (Ascending/Descending)
+4. Click **Create Index**
+
+#### Create Unique Index
+1. **Tools** tab → **Index Management**
+2. Enter field name
+3. Check **Unique Index** checkbox
+4. Click **Create Index**
+5. Prevents duplicate values in field
+
+#### Create Compound Index
+1. Click **Create New Index** form
+2. Enter JSON: `{"field1": 1, "field2": -1}`
+3. Select order for each field
+4. Click **Create Index**
+
+#### Drop Index
+1. **Tools** tab → **Index Management**
+2. Select index from dropdown
+3. Click **Drop Index**
+4. Confirm deletion
+
+#### When to Create Indexes
+- ✅ Fields used frequently in queries
+- ✅ Fields used in sort operations
+- ✅ Fields that must be unique
+- ✅ Foreign key references
+- ❌ Avoid indexes on rarely queried fields
+- ❌ Don't index small text fields
+
+### Backup & Restore
+
+#### Create Backup
+1. **Security** tab → **Database Backup**
+2. Click **Create Backup Now**
+3. Wait for completion message
+4. Backup created as .bak file with timestamp
+
+#### View Backups
+1. **Security** tab → **Available Backups**
+2. Shows all backups with file size and date
+3. Click **Restore** to recover from backup
+4. Confirm restore operation
+
+#### Backup Naming Convention
+- Format: `backup_YYYY_MM_DD_HH_MM_SS.bak`
+- Example: `backup_2026_01_15_14_30_45.bak`
+- Stored in `/backups/` directory
+
+#### Restore from Backup
+1. **Security** tab → **Available Backups**
+2. Select backup from list
+3. Click **Restore Backup**
+4. Confirm: "All current data will be replaced"
+5. Wait for restoration to complete
+6. All collections restored to backup state
+
+#### Backup Best Practices
+- ✅ Create before major operations
+- ✅ Schedule daily backups for production
+- ✅ Keep multiple backup versions (daily, weekly, monthly)
+- ✅ Test restore process periodically
+- ✅ Store backups on separate disk/server
+- ✅ Compress old backups to save space
+- ✅ Document backup retention policy
+
+---
+
+## 🔧 API Reference
+
+### Form Actions (POST Requests)
+
+#### Document Operations
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `add` | `json_data` | Insert new document |
+| `update` | `doc_id`, `json_data` | Update existing document |
+| `delete` | `doc_id` | Delete document |
+| `duplicate` | `doc_id` | Clone document |
+
+#### Bulk Operations
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `bulk_delete_selected` | `doc_ids` | Delete multiple documents |
+| `bulk_update_selected` | `doc_ids`, `update_data` | Update multiple documents |
+| `bulk_update_query` | `bulk_filter`, `bulk_update` | Update by query |
+
+#### Field Operations
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `add_field` | `field_name`, `default_value` | Add field to all docs |
+| `remove_field` | `field_name` | Remove field from all docs |
+| `rename_field` | `old_field_name`, `new_field_name` | Rename field |
+
+#### Collection Operations
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `create_collection` | `collection_name` | Create new collection |
+| `drop_collection` | `collection_to_drop`, `confirm_collection_name` | Delete collection |
+| `rename_collection` | `old_collection_name`, `new_collection_name` | Rename collection |
+| `clone_collection` | `clone_source`, `clone_target`, `clone_indexes` | Copy collection |
+
+#### Index Operations
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `create_index` | `index_field`, `index_order`, `index_unique` | Create index |
+| `drop_index` | `index_name` | Delete index |
+
+#### Query Operations
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `execute_query` | `query_field`, `query_value`, `query_op` | Execute quick query |
+| `execute_custom_query` | `custom_query` | Execute JSON query |
+
+#### Backup Operations
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `create_backup` | None | Create database backup |
+| `clear_logs` | None | Clear security logs |
+
+### Query Parameters (GET Requests)
+
+| Parameter | Values | Description |
+|-----------|--------|-------------|
+| `collection` | string | Switch collection |
+| `page` | number | Pagination page |
+| `per_page` | 10, 25, 50, 100 | Items per page |
+| `search` | string | Text search query |
+| `sort` | field name | Sort field |
+| `order` | asc, desc | Sort order |
+| `filter` | JSON | MongoDB filter |
+| `disconnect` | 1 | Disconnect from DB |
+
+### Response Format
+
+#### Success Response
+```json
+{
+  "success": true,
+  "message": "✅ Operation completed",
+  "data": {
+    "inserted_id": "...",
+    "modified_count": 5,
+    "deleted_count": 2
+  }
+}
+```
+
+#### Error Response
+```json
+{
+  "success": false,
+  "message": "❌ Error description",
+  "error": "Detailed error message",
+  "code": "OPERATION_FAILED"
+}
+```
+
+---
+
+## 🧩 Extension Points
+
+### Adding Custom Fields to Documents
+1. Create field in collection using **Add Field** operation
+2. Set default value for existing documents
+3. New documents automatically include field
+4. Field appears in all views and exports
+
+### Custom Query Examples
+
+#### Find Duplicates
+```json
+{
+  "email": {
+    "$exists": true
+  }
+}
+```
+Then manually review results for duplicate email values.
+
+#### Find Missing Data
+```json
+{
+  "phone": {
+    "$exists": false
+  }
+}
+```
+Finds all documents without a phone field.
+
+#### Find Recently Added
+```json
+{
+  "createdAt": {
+    "$gte": {
+      "$date": "2026-01-01T00:00:00Z"
+    }
+  }
+}
+```
+
+#### Find by Partial Text
+```json
+{
+  "email": {
+    "$regex": "@gmail.com$",
+    "$options": "i"
+  }
+}
+```
+
+---
+
+## 📱 Mobile Usage
+
+### Responsive Features
+- ✅ Touch-friendly buttons and controls
+- ✅ Mobile-optimized layout
+- ✅ Readable on screens as small as 320px
+- ✅ Tap-to-expand JSON views
+- ✅ Swipeable pagination controls
+
+### Mobile Tips
+- 📱 Use landscape mode for wider views
+- 📱 Zoom in for detailed editing
+- 📱 Test on both iOS and Android
+- 📱 Use Chrome/Safari for best compatibility
+- 📱 Mobile data: Limit query results to reduce bandwidth
+
+---
+
+## 🔍 Keyboard Shortcuts
+
+| Shortcut | Action | Tab |
+|----------|--------|-----|
+| `Tab` | Navigate form fields | All |
+| `Enter` | Submit form | All |
+| `Ctrl+F` | Browser find (in page) | All |
+| `Esc` | Close modal dialog | Modals |
+| `Ctrl+A` | Select all text | Query Builder |
+| `Ctrl+X` | Cut selected text | Editors |
+| `Ctrl+C` | Copy selected text | All |
+| `Ctrl+V` | Paste from clipboard | Editors |
+
+---
+
+## 💻 System Requirements
+
+### Minimum
+- **OS:** Windows, macOS, Linux
+- **PHP:** 7.0+ (recommended 8.0+)
+- **MongoDB:** 3.0+
+- **RAM:** 512 MB
+- **Disk:** 100 MB
+- **Browser:** Chrome 60+, Firefox 55+
+
+### Recommended
+- **OS:** Linux (Ubuntu 20.04+)
+- **PHP:** 8.1+ with OPcache enabled
+- **MongoDB:** 5.0+ with authentication
+- **RAM:** 2+ GB
+- **Disk:** 1+ GB SSD
+- **Browser:** Chrome 90+, Firefox 88+
+
+### Optional
+- **SSL Certificate:** For HTTPS
+- **nginx/Apache:** For production deployment
+- **Docker:** For containerized deployment
+
+---
+
+## 🌍 Internationalization (i18n)
+
+### Current Support
+- **English (en-US)** - Fully supported
+- **Spanish (es)** - Partial support
+- **French (fr)** - Partial support
+
+### Adding New Language
+1. Create language file: `/lang/xx.php`
+2. Add translations for all strings
+3. Update language selector in header
+4. Load language file based on user preference
+
+### Translation Strings
+```php
+$lang = [
+    'add_document' => 'Add Document',
+    'edit_document' => 'Edit Document',
+    'delete_document' => 'Delete Document',
+    'query_builder' => 'Query Builder',
+    'export_data' => 'Export Data'
+];
+```
+
+---
+
+## 📈 Monitoring & Alerts
+
+### Health Checks
+- ✅ MongoDB connection status
+- ✅ Database availability
+- ✅ Backup success/failure
+- ✅ Security event frequency
+- ✅ Error rate monitoring
+
+### Setting Up Alerts
+1. **Security Tab** → Configure notification email
+2. Alert when backup fails
+3. Alert on security violations
+4. Alert on database errors
+5. Daily/weekly summary emails
+
+---
+
+## 🎉 Success Stories
+
+### Common Use Cases
+
+**Case 1: Data Migration**
+- Export from old database as JSON
+- Create new collection
+- Import JSON into new collection
+- Verify data integrity
+- Switch application to new database
+
+**Case 2: Regular Backups**
+- Schedule daily backup creation
+- Store backups on external drive
+- Test monthly restore procedure
+- Archive old backups quarterly
+- Maintain 3-month backup history
+
+**Case 3: Data Analysis**
+- Use Query Builder for complex analysis
+- Export results for further processing
+- Create visualizations
+- Share findings with team
+- Document insights
+
+**Case 4: Development/Testing**
+- Clone production collection
+- Generate test data with templates
+- Run queries safely on copy
+- Delete test data when done
+- Never modify production directly
+
+---
+
+## 🔔 Notifications & Events
+
+### Email Notifications (When Configured)
+- ✅ Backup creation success
+- ✅ Backup restoration completion
+- ✅ Failed login attempts
+- ✅ Security violations detected
+- ✅ Critical operation completion
+- ✅ Daily activity summary
+
+### In-App Notifications
+- ✅ Operation success/failure messages
+- ✅ Warnings before destructive operations
+- ✅ Rate limit warnings
+- ✅ Session timeout alerts
+
+---
+
+## 🆘 Getting Help
+
+### Documentation
+- **README** - This file (general information)
+- **[FEATURES.md](FEATURES.md)** - Detailed feature list
+- **[SECURITY.md](SECURITY.md)** - Security documentation
+- **In-App Help** - Hover over ? icons for tips
+
+### Support Channels
+1. **GitHub Issues** - Bug reports and feature requests
+2. **Discussion Forum** - Q&A and best practices
+3. **Wiki** - Community-contributed guides
+4. **Email** - Direct support (response time: 24-48 hours)
+
+### Asking for Help
+Include:
+- ✅ PHP version (`php -v`)
+- ✅ MongoDB version (`mongosh --version`)
+- ✅ Browser and OS
+- ✅ Steps to reproduce
+- ✅ Error messages
+- ✅ Screenshots
+- ✅ Relevant logs
+
+---
+
+## 🎯 Future Roadmap
+
+### Planned Features (2026)
+- [ ] GraphQL API interface
+- [ ] Real-time collaboration (WebSocket)
+- [ ] Advanced charting library
+- [ ] Custom field validators
+- [ ] Scheduled query execution
+- [ ] Data transformation pipelines
+- [ ] Machine learning insights
+- [ ] Mobile native app
+- [ ] REST API for programmatic access
+- [ ] Integration with BI tools (Tableau, Power BI)
+
+---
+
+**Happy MongoDB Managing! 🚀**
+
+_For the latest updates, visit our GitHub repository and don't forget to ⭐ Star if you find this project useful!_

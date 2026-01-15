@@ -85,6 +85,10 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
     background-attachment: fixed;
+
+    /* FIX: make background-position animation visible */
+    background-size: 200% 200%;
+
     min-height: 100vh;
     padding: 20px;
     line-height: 1.6;
@@ -102,6 +106,7 @@ button, .btn, a, input, select, textarea {
     transition: all 0.3s ease !important;
 }
 
+/* FIX: gradient animation now works with background-size above */
 @keyframes gradientShift {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
@@ -246,6 +251,7 @@ h2 {
     border: 2px solid;
 }
 
+/* FIX: keep only ONE slideInDown; remove duplicate later */
 @keyframes slideInDown {
     from {
         opacity: 0;
@@ -617,8 +623,9 @@ table tbody tr {
     transition: all 0.3s ease;
 }
 
-table tbody tr:hover {
-    background-color: var(--table-hover) !important;
+/* FIX: apply hover to cells, because td has its own background */
+table tbody tr:hover td {
+    background: var(--table-hover) !important;
     box-shadow: 0 2px 8px var(--shadow-color);
 }
 
@@ -789,15 +796,8 @@ table tbody tr:hover {
         opacity: 0;
     }
 }
-@keyframes slideInDown {
-    from {
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
+
+/* FIX: removed duplicate @keyframes slideInDown (it used to be here) */
 
 .modal-header {
     margin-bottom: 25px;

@@ -203,6 +203,9 @@ if (isset($_SESSION['field_stats']['data']) && is_array($_SESSION['field_stats']
 // Load search/filter and form handlers
 include 'includes/handlers.php';
 
+// FIX: Load button handler fixes for missing form logic
+include 'config/button-fixes.php';
+
 // Load collection statistics
 include 'includes/statistics.php';
 

@@ -22,7 +22,7 @@ require_once 'config/security.php';
     <title>MongoDB Admin Panel</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" type="text/css" href="styles.css">
     <script>
         function switchCollection(collectionName) {
             const urlParams = new URLSearchParams(window.location.search);
