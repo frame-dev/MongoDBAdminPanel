@@ -1268,6 +1268,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'exportanalytics') {
         try {
+            // Initialize variables with defaults
+            $documentCount = 0;
+            $totalSize = 0;
+            $avgDocSize = 0;
+            $collectionNames = [];
+            
+            // Try to gather analytics data
+            if ($collection !== null) {
+                try {
+                    $documentCount = $collection->countDocuments();
+                    
+                    // Get collection stats
+                    $stats = $database->selectCollection('system.namespaces')->findOne(['name' => $db . '.' . $collectionName]);
+                    if ($stats) {
+                        $totalSize = $stats['size'] ?? 0;
+                        $avgDocSize = $documentCount > 0 ? $totalSize / $documentCount : 0;
+                    }
+                } catch (Exception $e) {
+                    // Stats not available
+                }
+                
+                // Get all collection names
+                try {
+                    foreach ($database->listCollections() as $coll) {
+                        $collectionNames[] = $coll->getName();
+                    }
+                } catch (Exception $e) {
+                    // Collections list not available
+                }
+            }
+            
             // Gather all analytics data
             $analyticsReport = [
                 'generated_at' => date('Y-m-d H:i:s'),

@@ -17,6 +17,8 @@ composer.lock
 *.log
 logs/
 
+backups/
+
 # Temporary files
 tmp/
 temp/

@@ -206,6 +206,9 @@ include 'includes/handlers.php';
 // Load collection statistics
 include 'includes/statistics.php';
 
+// Load backup and audit logging utilities
+include 'includes/backup.php';
+
 // Initialize Query History in session
 if (!isset($_SESSION['query_history'])) {
     $_SESSION['query_history'] = [];
@@ -4275,9 +4278,6 @@ include 'templates/header.php';
     </div>
 
     <?php
-    // Load backup utilities
-    require_once 'includes/backup.php';
-
     // Handle backup action
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if ($_POST['action'] === 'create_backup') {
