@@ -178,59 +178,117 @@ MongoDBAdminPanel/
 
 ## 🔒 Security Features
 
-This panel implements **10+ layers of security protection** following OWASP best practices:
+This panel implements **11+ layers of security protection** following OWASP best practices:
 
-### 1. ✅ **CSRF Protection (Cross-Site Request Forgery)**
+### 1. ✅ **User Authentication System**
+- BCRYPT password hashing with cost 12
+- Username/email unique validation
+- Account lockout after 5 failed attempts (15 minutes)
+- Login attempt tracking
+- Session fixation prevention
+- First user automatically becomes admin
+
+### 2. ✅ **CSRF Protection (Cross-Site Request Forgery)**
 - Unique token per session
 - Required for all dangerous operations (delete, update, import)
 - Session-based validation
 
-### 2. ✅ **Rate Limiting**
+### 2. ✅ **CSRF Protection (Cross-Site Request Forgery)**
+- Unique token per session
+- Required for all dangerous operations (delete, update, import)
+- Session-based validation
+
+### 3. ✅ **Rate Limiting**
 - 30 requests per 60 seconds per action
 - Prevents brute force and DoS attacks
 - Session-based tracking with security logging
 
-### 3. ✅ **Input Sanitization**
+### 3. ✅ **Rate Limiting**
+- 30 requests per 60 seconds per action
+- Prevents brute force and DoS attacks
+- Session-based tracking with security logging
+
+### 4. ✅ **Input Sanitization**
 - XSS prevention on all user inputs
 - HTML entity encoding with UTF-8
 - Recursive array sanitization
 - `htmlspecialchars()` with `ENT_QUOTES` flag
 
-### 4. ✅ **JSON Validation**
+### 4. ✅ **Input Sanitization**
+- XSS prevention on all user inputs
+- HTML entity encoding with UTF-8
+- Recursive array sanitization
+- `htmlspecialchars()` with `ENT_QUOTES` flag
+
+### 5. ✅ **JSON Validation**
 - Detection of dangerous patterns (`$where`, `eval()`, `function`, `constructor`)
 - Prevents code injection attacks
 - Validation before document insertion
 
-### 5. ✅ **MongoDB Query Sanitization**
+### 5. ✅ **JSON Validation**
+- Detection of dangerous patterns (`$where`, `eval()`, `function`, `constructor`)
+- Prevents code injection attacks
+- Validation before document insertion
+
+### 6. ✅ **MongoDB Query Sanitization**
 - Whitelist-based operator validation
 - Allowed operators: `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$regex`, `$exists`, `$or`, `$and`
 - NoSQL injection prevention
 
-### 6. ✅ **Field & Collection Name Validation**
+### 6. ✅ **MongoDB Query Sanitization**
+- Whitelist-based operator validation
+- Allowed operators: `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$regex`, `$exists`, `$or`, `$and`
+- NoSQL injection prevention
+
+### 7. ✅ **Field & Collection Name Validation**
 - Alphanumeric, underscore, dash only
 - Maximum 64 characters for collections
 - Prevents `$` prefix (operator injection)
 - No null bytes or special characters
 
-### 7. ✅ **File Upload Security**
+### 7. ✅ **Field & Collection Name Validation**
+- Alphanumeric, underscore, dash only
+- Maximum 64 characters for collections
+- Prevents `$` prefix (operator injection)
+- No null bytes or special characters
+
+### 8. ✅ **File Upload Security**
 - Maximum 5 MB file size
 - MIME type validation
 - File extension checking
 - Stored outside web root when possible
 
-### 8. ✅ **Security Event Logging**
+### 8. ✅ **File Upload Security**
+- Maximum 5 MB file size
+- MIME type validation
+- File extension checking
+- Stored outside web root when possible
+
+### 9. ✅ **Security Event Logging**
 - All violations logged with timestamp
 - Session ID and action tracking
 - Stored in `logs/` directory
 - Viewable in Security tab for audit
 
-### 9. ✅ **Audit Trail**
+### 9. ✅ **Security Event Logging**
+- All violations logged with timestamp
+- Session ID and action tracking
+- Stored in `logs/` directory
+- Viewable in Security tab for audit
+
+### 10. ✅ **Audit Trail**
 - Complete operation history
 - Who, what, when, where tracking
 - Database backup metadata
 - Import/export activity logs
 
-### 10. ✅ **Session Security**
+### 10. ✅ **Audit Trail**
+- Complete operation history
+- Who, what, when, where tracking
+- Database backup metadata
+- Import/export activity logs
+
+### 11. ✅ **Session Security**
 - Session fixation prevention
 - Secure session handling
 - Cookie security flags
@@ -241,6 +299,19 @@ This panel implements **10+ layers of security protection** following OWASP best
 ---
 
 ## 📚 How to Use
+
+### Login & Authentication
+1. **First-Time Setup** - First user account created will automatically be admin
+2. **Create Account** - Click "Create one" link on login page
+3. **Username Requirements** - 3-32 characters (letters, numbers, underscore only)
+4. **Password Requirements** - Minimum 8 characters recommended
+5. **Login** - Enter credentials and click "Sign In"
+6. **Logout** - Click logout button in top-right corner of dashboard
+
+### User Roles
+- **Admin** - Full access to all features and user management
+- **Editor** - Can view, create, edit, delete documents and execute queries
+- **Viewer** - Can only view documents and execute read-only queries
 
 ### Dashboard Tab
 1. **View Statistics** - Live collection and database metrics
@@ -271,6 +342,16 @@ This panel implements **10+ layers of security protection** following OWASP best
 2. Include filter, sort, limit in JSON format
 3. Click "Execute Query"
 4. View formatted results with syntax highlighting
+
+**Query History**
+- All executed queries are automatically tracked and stored in MongoDB
+- Persistent storage - history survives session expiration
+- Per-user history - each user sees only their own queries
+- Last 30 days of queries retained (automatic cleanup)
+- Shows query type (visual or custom), results count, execution time, and status
+- Click "Clear History" to remove all your tracked queries
+- Perfect for auditing query patterns, troubleshooting, and analyzing performance
+- Automatically indexed for fast retrieval
 
 ### Add Document Tab
 1. **Write JSON** - Paste or type document JSON
@@ -622,14 +703,16 @@ Solution:
 - ✅ Import/export (JSON, CSV)
 - ✅ Security audit logging
 - ✅ Modern UI with animations
-- ✅ 10+ security layers
+- ✅ 11+ security layers
+- ✅ Query history tracking (persistent database storage)
+- ✅ User authentication system (BCRYPT passwords, 3 roles)
 
 ### v1.1.0 (Planned Q2 2026)
-- [ ] User authentication system
-- [ ] Role-based access control
-- [ ] Query history tracking
+- [ ] Role-based access control (enhanced permissions)
+- ✅ Persistent query history (database storage)
 - ✅ Dark mode theme
 - [ ] Custom field validators
+- [ ] User management dashboard
 
 ### v1.2.0 (Planned Q3 2026)
 - [ ] Scheduled backups (cron)
@@ -802,6 +885,15 @@ If you find this project helpful or useful, please consider:
 - **💡 Suggest Features** - Ideas for new functionality
 - **🤝 Contribute** - Join us in development
 
+### Authentication & User Management
+- **User Registration** - Create new accounts with validation
+- **BCRYPT Hashing** - Industry-standard password encryption
+- **Account Lockout** - Auto-lock after 5 failed login attempts (15 min)
+- **Session Management** - Secure session handling with regeneration
+- **Login Tracking** - Records login time and attempt count
+- **Role-Based Access** - Three-tier permission system (Admin/Editor/Viewer)
+- **Audit Trail** - All authentication events logged
+
 ---
 
 **Made with ❤️ for the MongoDB Community**
@@ -816,7 +908,7 @@ _Actively Maintained & Supported_
 - **Total Features:** 60+
 - **UI Tabs:** 12 (Dashboard, Browse, Query, Add, Bulk, Tools, Advanced, Performance, Analytics, Schema, Security, Settings)
 - **Core Functions:** 50+ implemented with comprehensive error handling
-- **Security Layers:** 10+ (CSRF, Rate Limiting, Input Sanitization, Query Validation, Audit Logging, SSL Support, Session Management, File Upload Protection)
+- **Security Layers:** 11+ (User Authentication, CSRF, Rate Limiting, Input Sanitization, Query Validation, Audit Logging, SSL Support, Session Management, File Upload Protection, Account Lockout)
 - **File Operations:** Import (JSON), Export (JSON/CSV), Backup, Restore
 - **Data Analysis:** Field statistics, Time series, Correlation analysis, Duplicate detection
 - **Code Quality:** 5000+ lines of production code with full documentation

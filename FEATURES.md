@@ -7,24 +7,97 @@ A comprehensive guide to all features, tabs, and functionalities available in th
 ---
 
 ## Table of Contents
-1. [Dashboard Tab](#-dashboard-tab)
-2. [Browse Tab](#-browse-tab)
-3. [Query Builder Tab](#-query-builder-tab)
-4. [Add Document Tab](#-add-document-tab)
-5. [Bulk Operations Tab](#-bulk-operations-tab)
-6. [Tools Tab](#-tools-tab)
-7. [Advanced Tab](#-advanced-tab)
-8. [Performance Tab](#-performance-tab)
-9. [Analytics Tab](#-analytics-tab)
-10. [Schema Explorer Tab](#-schema-explorer-tab)
-11. [Security & Backup Tab](#-security--backup-tab)
-12. [Settings Tab](#-settings-tab)
-13. [Design Features](#-design-features)
-14. [Technical Features](#-technical-features)
-15. [Implemented Functions](#-implemented-functions)
-16. [Usage Examples](#-usage-examples)
-17. [Performance Metrics](#-performance-metrics)
-18. [Roadmap](#-roadmap)
+1. [User Authentication](#-user-authentication)
+2. [Dashboard Tab](#-dashboard-tab)
+3. [Browse Tab](#-browse-tab)
+4. [Query Builder Tab](#-query-builder-tab)
+5. [Add Document Tab](#-add-document-tab)
+6. [Bulk Operations Tab](#-bulk-operations-tab)
+7. [Tools Tab](#-tools-tab)
+8. [Advanced Tab](#-advanced-tab)
+9. [Performance Tab](#-performance-tab)
+10. [Analytics Tab](#-analytics-tab)
+11. [Schema Explorer Tab](#-schema-explorer-tab)
+12. [Security & Backup Tab](#-security--backup-tab)
+13. [Settings Tab](#-settings-tab)
+14. [Design Features](#-design-features)
+15. [Technical Features](#-technical-features)
+16. [Implemented Functions](#-implemented-functions)
+17. [Usage Examples](#-usage-examples)
+18. [Performance Metrics](#-performance-metrics)
+19. [Roadmap](#-roadmap)
+
+---
+
+## 🔐 User Authentication
+
+**Purpose:** Secure user access and account management with role-based permissions
+
+### Registration Process
+**New User Account Creation:**
+- **First Admin** - First registered user becomes admin automatically
+- **Subsequent Users** - Register as viewers (promote as needed)
+- **Username Validation** - 3-32 characters (alphanumeric + underscore only)
+- **Email Validation** - Must be unique, valid email format
+- **Password Requirements** - Minimum 8 characters recommended
+- **Password Confirmation** - Must match to prevent typos
+- **Full Name** - Optional field for display purposes
+
+**Password Strength Indicator:**
+- Visual feedback as user types
+- Color-coded strength meter (red → yellow → blue → green)
+- Encourages strong password creation
+
+### Login System
+**Authentication Process:**
+- **Username/Email** - Unique credential validation
+- **Password Verification** - BCRYPT hashing with cost 12
+- **Failed Attempts** - Tracked for security
+- **Account Lockout** - Auto-lock after 5 failed attempts (15 minute cooldown)
+- **Session Management** - Secure session ID regeneration
+- **Login Tracking** - Records timestamp and increments login count
+
+**Security Features:**
+- Failed login attempts logged to audit trail
+- Account lockout prevents brute force attacks
+- Session fixation prevention through ID regeneration
+- Secure session cookie handling
+
+### User Roles & Permissions
+**Admin Role:**
+- Full access to all features
+- Can manage user accounts
+- Can view and manage all data
+- Can access security settings
+- Can perform administrative operations
+
+**Editor Role:**
+- View, create, edit, delete documents
+- Execute all types of queries
+- Import/export data
+- Access templates
+- Cannot manage users or system settings
+
+**Viewer Role:**
+- View documents (read-only)
+- Execute read-only queries
+- Export data
+- Cannot create, edit, or delete
+- Limited access to advanced features
+
+### User Management (Admin Only)
+**Account Management:**
+- View all registered users
+- Update user roles
+- Deactivate accounts
+- View last login information
+- Track login counts
+
+**Password Management:**
+- Change your own password
+- Requires current password verification
+- New password must meet requirements
+- Password change logged to audit
 
 ---
 
@@ -207,6 +280,34 @@ For advanced MongoDB queries:
 - **Export Options** - Export results as JSON or CSV
 - **Performance Info** - Query execution time
 - **Copy Results** - Copy all results to clipboard
+
+### Query History
+**Automatic Tracking**
+- Every executed query is automatically recorded to MongoDB
+- Both visual and custom query modes tracked
+- Persistent storage across sessions (survives logout/login)
+- Per-user history - each authenticated user has separate query history
+- Automatic 30-day retention with TTL indexes (old queries auto-deleted)
+
+**History Display**
+- **Retrieve by Time** - Shows most recent queries first
+- **Query Type Badge** - Visual indicator (Visual vs Custom)
+- **Query Details** - Full query JSON stored and retrievable
+- **Result Count** - Shows number of documents returned
+- **Execution Time** - Performance metrics for each query
+- **Timestamp** - Exact time query was executed
+- **Status Indicator** - Success/failure status
+
+**History Management**
+- **Database-Backed** - Stored in MongoDB `_query_history` collection
+- **User-Specific** - Only authenticated users see their own history
+- **Indexed Storage** - Fast retrieval with compound indexes
+- **Clear History** - Delete all your query history with one click
+- **Automatic Cleanup** - Queries older than 30 days auto-deleted
+- **50 Query Limit** - Maintains last 50 queries per session
+- **Clear History** - One-click button to reset history
+- **Audit Trail** - Perfect for tracking query patterns
+- **Performance Analysis** - See which queries return most results
 
 ---
 
@@ -1462,7 +1563,7 @@ Compare MongoDB Admin Panel with other tools:
 #### v1.1.0 (Q2 2026)
 - [ ] User authentication system
 - [ ] Role-based access control (RBAC)
-- [ ] Query history tracking
+- ✅ Query history tracking (persistent MongoDB storage)
 - [ ] Dark mode theme
 - [ ] Custom field validators
 - [ ] Advanced search with filters

@@ -110,6 +110,32 @@ require_once 'config/security.php';
             margin-bottom: 20px;
             border: 1px solid #f5c6cb;
         }
+        
+        .help-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #eee;
+        }
+        
+        .help-section h3 {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .help-tips {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .help-tips li {
+            margin-bottom: 10px;
+        }
+        
+        .help-tips strong {
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -119,6 +145,7 @@ require_once 'config/security.php';
         
         <?php if ($connectionError): ?>
             <div class="error-message">
+                <strong>⚠️ Connection Error:</strong><br>
                 <?php echo htmlspecialchars($connectionError); ?>
             </div>
         <?php endif; ?>
@@ -158,6 +185,19 @@ require_once 'config/security.php';
             
             <button type="submit" class="btn">🔗 Connect</button>
         </form>
+        
+        <div class="help-section">
+            <h3>🔧 Troubleshooting Connection Issues</h3>
+            <ul class="help-tips">
+                <li><strong>MongoDB Not Running:</strong> Ensure MongoDB service is running on your system. Start it with: <code>mongod</code></li>
+                <li><strong>Default Settings:</strong> If connecting locally, use <strong>localhost:27017</strong> as hostname and port</li>
+                <li><strong>Authentication:</strong> Leave username/password blank if MongoDB doesn't require authentication (default)</li>
+                <li><strong>Database Name:</strong> Must exist in MongoDB or MongoDB will create it automatically</li>
+                <li><strong>Collection Name:</strong> This is where data will be stored</li>
+                <li><strong>Connection Timeout:</strong> If connection takes too long, verify the hostname is correct</li>
+                <li><strong>Firewall:</strong> If MongoDB is on another machine, ensure port 27017 is open in your firewall</li>
+            </ul>
+        </div>
     </div>
 </body>
 </html>

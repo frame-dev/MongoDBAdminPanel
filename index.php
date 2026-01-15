@@ -22,32 +22,86 @@ use MongoDB\BSON\UTCDateTime;
 // Load security functions
 require_once 'config/security.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Exceptions: actions that bypass CSRF verification or have their own handling
-    $action = $_POST['action'] ?? '';
-    $bypassCsrf = isset($_POST['connect']) || $action === 'export_settings' || $action === 'import_settings';
+// Load authentication functions
+require_once 'config/auth.php';
+
+// Load database configuration first (needed for authentication)
+require_once 'config/database.php';
+
+// Handle authentication requests (now that database is loaded)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    $authAction = $_POST['action'];
     
-    if (!$bypassCsrf) {
-        $csrfToken = $_POST['csrf_token'] ?? '';
-        if (!verifyCSRFToken($csrfToken)) {
-            logSecurityEvent('csrf_failed', ['action' => $action]);
-            http_response_code(403);
-            die('CSRF token validation failed. Request blocked.');
+    // Handle login
+    if ($authAction === 'login') {
+        $username = $_POST['username'] ?? '';
+        $password = $_POST['password'] ?? '';
+        
+        $result = authenticateUser($username, $password);
+        if ($result['success']) {
+            createUserSession($result['user']);
+            $_SESSION['auth_message'] = $result['message'];
+            $_SESSION['auth_success'] = true;
+            header('Location: ' . $_SERVER['PHP_SELF']);
+            exit;
+        } else {
+            $_SESSION['auth_message'] = $result['message'];
+            $_SESSION['auth_success'] = false;
         }
+    }
+    // Handle registration
+    elseif ($authAction === 'register') {
+        $username = $_POST['username'] ?? '';
+        $email = $_POST['email'] ?? '';
+        $password = $_POST['password'] ?? '';
+        $passwordConfirm = $_POST['password_confirm'] ?? '';
+        $fullName = $_POST['full_name'] ?? '';
+        
+        // Validate password match
+        if ($password !== $passwordConfirm) {
+            $_SESSION['auth_message'] = 'Passwords do not match';
+            $_SESSION['auth_success'] = false;
+        } else {
+            // Determine if this is first user (should be admin)
+            // Default to 'viewer' role, only if database is connected can we check for existing users
+            $role = 'viewer';
+            if ($database !== null) {
+                try {
+                    $usersCollection = $database->getCollection('_auth_users');
+                    $userCount = $usersCollection->countDocuments();
+                    $role = ($userCount === 0) ? 'admin' : 'viewer';
+                } catch (Exception $e) {
+                    error_log("Error checking user count: " . $e->getMessage());
+                }
+            }
+            
+            $result = registerUser($username, $email, $password, $fullName, $role);
+            $_SESSION['auth_message'] = $result['message'];
+            $_SESSION['auth_success'] = $result['success'];
+            
+            if ($result['success']) {
+                $_SESSION['auth_message'] = 'Account created! You can now login.';
+            }
+        }
+    }
+    // Handle logout
+    elseif ($authAction === 'logout') {
+        logoutUser();
+        $_SESSION['auth_message'] = 'You have been logged out.';
+        $_SESSION['auth_success'] = true;
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
     }
 }
 
-// Clear any invalid session data with incomplete objects
-if (isset($_SESSION['field_stats']['data']) && is_array($_SESSION['field_stats']['data'])) {
-    foreach ($_SESSION['field_stats']['data'] as $item) {
-        if (is_object($item) && get_class($item) === '__PHP_Incomplete_Class') {
-            unset($_SESSION['field_stats']);
-            break;
-        }
-    }
+// Initialize variables needed for templates
+$connectionError = $_SESSION['connection_error'] ?? '';
+// Clear the one-time error message after displaying it
+if (isset($_SESSION['connection_error'])) {
+    unset($_SESSION['connection_error']);
 }
 
-// Handle connection changes
+// Handle connection changes BEFORE checking if connected
 $disconnect = $_GET['disconnect'] ?? '';
 if ($disconnect) {
     unset($_SESSION['mongo_connection']);
@@ -55,8 +109,7 @@ if ($disconnect) {
     exit;
 }
 
-// Handle new connection
-$connectionError = '';
+// Handle new connection request BEFORE checking if connected
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['connect'])) {
     try {
         $hostName = $_POST['hostname'] ?? '';
@@ -93,24 +146,218 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['connect'])) {
         header('Location: ' . $_SERVER['PHP_SELF']);
         exit;
     } catch (Exception $e) {
-        $connectionError = $e->getMessage();
+        $connectionError = 'Connection failed: ' . $e->getMessage();
+        $_SESSION['connection_error'] = $connectionError;
+        error_log("MongoDB Connection Error: " . $e->getMessage());
     }
 }
 
-// Check if connection is saved in session
-if (!isset($_SESSION['mongo_connection'])) {
+// Check if MongoDB connection exists - if not, show connection form instead of login
+if ($database === null) {
     include 'templates/connection.php';
+    include 'templates/footer.php';
     exit;
 }
 
-// Load database configuration and connect
-include 'config/database.php';
+// Check if user is authenticated (for non-auth actions)
+if (!isUserLoggedIn() && (!isset($_POST['action']) || !in_array($_POST['action'], ['login', 'register']))) {
+    include 'templates/login.php';
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Exceptions: actions that bypass CSRF verification or have their own handling
+    $action = $_POST['action'] ?? '';
+    
+    // Authentication actions and connection don't require CSRF tokens
+    // (they can be called before full page initialization)
+    $bypassCsrf = isset($_POST['connect']) || 
+                  $action === 'export_settings' || 
+                  $action === 'import_settings' ||
+                  $action === 'login' ||
+                  $action === 'register' ||
+                  $action === 'logout';
+    
+    if (!$bypassCsrf) {
+        $csrfToken = $_POST['csrf_token'] ?? '';
+        if (!verifyCSRFToken($csrfToken)) {
+            logSecurityEvent('csrf_failed', ['action' => $action]);
+            http_response_code(403);
+            die('CSRF token validation failed. Request blocked.');
+        }
+    }
+}
+
+// Clear any invalid session data with incomplete objects
+if (isset($_SESSION['field_stats']['data']) && is_array($_SESSION['field_stats']['data'])) {
+    foreach ($_SESSION['field_stats']['data'] as $item) {
+        if (is_object($item) && get_class($item) === '__PHP_Incomplete_Class') {
+            unset($_SESSION['field_stats']);
+            break;
+        }
+    }
+}
+
+// Database configuration already loaded at the top (config/database.php)
 
 // Load search/filter and form handlers
 include 'includes/handlers.php';
 
 // Load collection statistics
 include 'includes/statistics.php';
+
+// Initialize Query History in session
+if (!isset($_SESSION['query_history'])) {
+    $_SESSION['query_history'] = [];
+}
+
+/**
+ * Add query to history (both session and database)
+ * 
+ * @param array $queryData The query data to store
+ */
+function addToQueryHistory($queryData) {
+    global $database;
+    
+    // Keep session history for backward compatibility
+    if (!isset($_SESSION['query_history'])) {
+        $_SESSION['query_history'] = [];
+    }
+    
+    // Limit session history to last 50 queries
+    if (count($_SESSION['query_history']) >= 50) {
+        array_shift($_SESSION['query_history']);
+    }
+    
+    $entry = [
+        'timestamp' => date('Y-m-d H:i:s'),
+        'type' => $queryData['type'] ?? 'manual',
+        'query' => $queryData['query'] ?? [],
+        'results_count' => $queryData['results_count'] ?? 0,
+        'execution_time' => $queryData['execution_time'] ?? 0,
+        'status' => $queryData['status'] ?? 'success'
+    ];
+    
+    $_SESSION['query_history'][] = $entry;
+    
+    // Save to database if connected
+    if ($database !== null) {
+        try {
+            $historyCollection = $database->getCollection('_query_history');
+            
+            // Create indexes if they don't exist (only on first run)
+            if (!isset($_SESSION['query_history_indexed'])) {
+                try {
+                    $historyCollection->createIndex(['user_id' => 1, 'created_at' => -1]);
+                    $historyCollection->createIndex(['created_at' => -1], ['expireAfterSeconds' => 2592000]); // 30 days TTL
+                    $_SESSION['query_history_indexed'] = true;
+                } catch (Exception $e) {
+                    // Index may already exist
+                }
+            }
+            
+            // Get current user ID
+            $user = getCurrentUser();
+            $userId = $user['_id'] ?? 'anonymous';
+            
+            $historyEntry = [
+                'user_id' => $userId,
+                'collection' => $_SESSION['mongo_connection']['collection'] ?? 'unknown',
+                'database' => $_SESSION['mongo_connection']['database'] ?? 'unknown',
+                'type' => $entry['type'],
+                'query' => $entry['query'],
+                'results_count' => $entry['results_count'],
+                'execution_time' => $entry['execution_time'],
+                'status' => $entry['status'],
+                'created_at' => new MongoDB\BSON\UTCDateTime(time() * 1000)
+            ];
+            
+            $historyCollection->insertOne($historyEntry);
+        } catch (Exception $e) {
+            // Log error but don't break functionality
+            error_log("Error saving query history: " . $e->getMessage());
+        }
+    }
+}
+
+/**
+ * Get query history from database (with session fallback)
+ * 
+ * @param int $limit Maximum number of queries to return
+ * @return array Query history entries
+ */
+function getQueryHistory($limit = 10) {
+    global $database;
+    
+    // Try to get from database if connected
+    if ($database !== null) {
+        try {
+            $historyCollection = $database->getCollection('_query_history');
+            $user = getCurrentUser();
+            $userId = $user['_id'] ?? 'anonymous';
+            
+            $history = $historyCollection->find(
+                ['user_id' => $userId],
+                ['sort' => ['created_at' => -1], 'limit' => $limit]
+            )->toArray();
+            
+            $result = [];
+            foreach ($history as $entry) {
+                $result[] = [
+                    'timestamp' => $entry['created_at']->toDateTime()->format('Y-m-d H:i:s'),
+                    'type' => $entry['type'],
+                    'query' => $entry['query'],
+                    'results_count' => $entry['results_count'],
+                    'execution_time' => $entry['execution_time'],
+                    'status' => $entry['status']
+                ];
+            }
+            
+            return $result;
+        } catch (Exception $e) {
+            error_log("Error retrieving query history: " . $e->getMessage());
+            // Fall through to session history
+        }
+    }
+    
+    // Fall back to session history
+    if (!isset($_SESSION['query_history'])) {
+        return [];
+    }
+    
+    return array_slice(array_reverse($_SESSION['query_history']), 0, $limit);
+}
+
+/**
+ * Clear query history (both session and database)
+ */
+function clearQueryHistory() {
+    global $database;
+    
+    // Clear session history
+    $_SESSION['query_history'] = [];
+    
+    // Clear database history if connected
+    if ($database !== null) {
+        try {
+            $historyCollection = $database->getCollection('_query_history');
+            $user = getCurrentUser();
+            $userId = $user['_id'] ?? 'anonymous';
+            
+            $historyCollection->deleteMany(['user_id' => $userId]);
+        } catch (Exception $e) {
+            error_log("Error clearing query history: " . $e->getMessage());
+        }
+    }
+}
+
+// Handle clear query history
+if (isset($_GET['action']) && $_GET['action'] === 'clear_query_history') {
+    clearQueryHistory();
+    $message = '✅ Query history cleared successfully';
+    $messageType = 'success';
+    auditLog('query_history_cleared', []);
+}
 
 // Handle Settings and Security tab form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -455,6 +702,26 @@ include 'templates/header.php';
                 <a href="?disconnect=1"
                     style="background: #dc3545; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; cursor: pointer;">🔌
                     Change Connection</a>
+                
+                <!-- User Info & Logout -->
+                <?php $currentUser = getCurrentUser(); ?>
+                <div style="display: flex; align-items: center; gap: 10px; margin-left: auto; padding-left: 15px; border-left: 2px solid #ddd;">
+                    <div style="text-align: right; font-size: 12px;">
+                        <p style="color: var(--text-secondary); margin: 0;">Logged in as</p>
+                        <p style="color: var(--text-primary); font-weight: 600; margin: 0;">
+                            👤 <?php echo htmlspecialchars($currentUser['full_name'] ?: $currentUser['username']); ?>
+                        </p>
+                        <p style="color: #667eea; font-size: 11px; margin: 0;">
+                            <?php echo ucfirst($currentUser['role']); ?>
+                        </p>
+                    </div>
+                    <form method="POST" style="margin: 0;">
+                        <input type="hidden" name="action" value="logout">
+                        <button type="submit" class="btn" style="background: #6c757d; color: white; padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px;">
+                            🚪 Logout
+                        </button>
+                    </form>
+                </div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <label for="collectionSelect" style="color: var(--text-secondary); font-weight: 500;">Switch
@@ -1001,6 +1268,17 @@ include 'templates/header.php';
                     }
 
                     echo '<p style="color: #28a745; font-weight: 600; margin: 15px 0;"> Found ' . count($queryResults) . ' document(s)</p>';
+
+                    // Add to query history
+                    $historyEntry = [
+                        'type' => $_POST['action'] === 'execute_query' ? 'visual' : 'custom',
+                        'query' => $_POST['action'] === 'execute_query' 
+                            ? ['field' => $_POST['query_field'] ?? '', 'op' => $_POST['query_op'] ?? '', 'value' => $_POST['query_value'] ?? '']
+                            : ['custom' => $_POST['custom_query'] ?? ''],
+                        'results_count' => count($queryResults),
+                        'status' => 'success'
+                    ];
+                    addToQueryHistory($historyEntry);
 
                     // Export buttons
                     if (!empty($queryResults)) {
@@ -1657,6 +1935,70 @@ include 'templates/header.php';
         <?php endif; ?>
     </div>
 </div><!-- End of container -->
+
+    <!-- Query History Section -->
+    <div id="query_history_section" style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: 20px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="color: #333; margin: 0; font-size: 18px;">📜 Query History (Last 10)</h3>
+            <a href="?action=clear_query_history" class="btn" style="background: #dc3545; color: white; padding: 8px 16px; text-decoration: none; font-size: 12px;" 
+                onclick="return confirm('Clear all query history?');">
+                🗑️ Clear History
+            </a>
+        </div>
+
+        <?php
+        $history = getQueryHistory(10);
+        if (!empty($history)):
+        ?>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead>
+                    <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                        <th style="padding: 12px; text-align: left; color: #333; font-weight: 600;">Timestamp</th>
+                        <th style="padding: 12px; text-align: left; color: #333; font-weight: 600;">Type</th>
+                        <th style="padding: 12px; text-align: left; color: #333; font-weight: 600;">Query</th>
+                        <th style="padding: 12px; text-align: center; color: #333; font-weight: 600;">Results</th>
+                        <th style="padding: 12px; text-align: center; color: #333; font-weight: 600;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($history as $entry): ?>
+                    <tr style="border-bottom: 1px solid #dee2e6; transition: background 0.2s;">
+                        <td style="padding: 12px; color: #666;"><?php echo htmlspecialchars($entry['timestamp']); ?></td>
+                        <td style="padding: 12px; color: #666;">
+                            <span style="background: <?php echo $entry['type'] === 'visual' ? '#17a2b8' : '#6f42c1'; ?>; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">
+                                <?php echo ucfirst($entry['type']); ?>
+                            </span>
+                        </td>
+                        <td style="padding: 12px; color: #666; max-width: 400px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <code style="background: #f8f9fa; padding: 4px 8px; border-radius: 4px; font-size: 11px;">
+                                <?php 
+                                if ($entry['type'] === 'visual' && isset($entry['query']['field'])) {
+                                    echo htmlspecialchars($entry['query']['field'] . ' ' . $entry['query']['op'] . ' ' . substr($entry['query']['value'], 0, 20));
+                                } else {
+                                    $customQuery = isset($entry['query']['custom']) ? substr($entry['query']['custom'], 0, 50) : '';
+                                    echo htmlspecialchars($customQuery);
+                                }
+                                ?>
+                            </code>
+                        </td>
+                        <td style="padding: 12px; text-align: center; color: #28a745; font-weight: 600;">
+                            <?php echo htmlspecialchars((string)$entry['results_count']); ?>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            <span style="background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">
+                                ✓ <?php echo ucfirst($entry['status']); ?>
+                            </span>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php else: ?>
+        <p style="color: #999; text-align: center; padding: 20px;">No queries executed yet. Execute your first query to see it in history!</p>
+        <?php endif; ?>
+    </div>
 
     <!-- Add Document Tab -->
     <div id="add" class="tab-content">
