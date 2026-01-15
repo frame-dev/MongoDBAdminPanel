@@ -14,6 +14,7 @@
 
 session_start();
 require 'vendor/autoload.php';
+require_once 'config/bson-stubs.php';
 
 use MongoDB\Client;
 use MongoDB\BSON\ObjectId;
@@ -275,7 +276,7 @@ function addToQueryHistory($queryData) {
                 'results_count' => $entry['results_count'],
                 'execution_time' => $entry['execution_time'],
                 'status' => $entry['status'],
-                'created_at' => new MongoDB\BSON\UTCDateTime(time() * 1000)
+                'created_at' => new UTCDateTime(time() * 1000)
             ];
             
             $historyCollection->insertOne($historyEntry);

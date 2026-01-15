@@ -202,14 +202,14 @@
                                 $value = null;
                                 break;
                             case 'objectid':
-                                $value = new ObjectId($rawValue);
+                                $value = new MongoDB\BSON\ObjectId($rawValue);
                                 break;
                             case 'date':
                                 $ts = strtotime($rawValue);
                                 if ($ts === false) {
                                     throw new Exception('Invalid date value');
                                 }
-                                $value = new UTCDateTime($ts * 1000);
+                                $value = new MongoDB\BSON\UTCDateTime($ts * 1000);
                                 break;
                             case 'string':
                             default:

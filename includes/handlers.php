@@ -13,6 +13,8 @@
  * @license MIT
  */
 
+require_once __DIR__ . '/../config/bson-stubs.php';
+
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
 
