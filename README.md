@@ -1,34 +1,43 @@
 # 🚀 MongoDB Admin Panel
 
-A modern, secure, feature-rich web-based administration interface for MongoDB databases. This professional-grade tool provides a visual interface for managing MongoDB collections, documents, and operations without requiring command-line expertise.
+A modern, secure, feature-rich web-based administration interface for MongoDB databases with **enterprise-grade authentication, role-based access control, and comprehensive audit logging**. This professional-grade tool provides a visual interface for managing MongoDB collections, documents, and operations without requiring command-line expertise.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![PHP](https://img.shields.io/badge/PHP-7.0+-purple)
+![Version](https://img.shields.io/badge/version-2.0.0-blue)
+![PHP](https://img.shields.io/badge/PHP-8.0+-purple)
 ![MongoDB](https://img.shields.io/badge/MongoDB-3.0+-green)
-![Security](https://img.shields.io/badge/security-hardened-red)
+![Security](https://img.shields.io/badge/security-enterprise-red)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
 ## ✨ Key Features
 
+### 🔐 Enterprise Security & Authentication
+- **User Authentication System** - Secure login with BCRYPT password hashing
+- **Role-Based Access Control (RBAC)** - 5 roles (Admin, Editor, Developer, Analyst, Viewer) with 20+ granular permissions
+- **Session Management** - Secure session handling with fixation prevention
+- **Account Security** - Lockout after 5 failed attempts, password strength validation
+- **Audit Logging System** - Comprehensive tracking of all user actions with 50+ event types
+
 ### Core Functionality
 - 🎯 **Interactive Dashboard** - Live statistics with real-time data and quick actions
-- 📋 **Document Management** - Browse, view, create, edit, and delete documents
+- 📋 **Document Management** - Browse, view, create, edit, and delete documents (permission-based)
 - 🔍 **Dual Query Builder** - Visual query builder and raw JSON query editor
-- ➕ **Add Documents** - Create new documents with template support
-- ✏️ **Edit Documents** - Modify existing documents with validation
+- ➕ **Add Documents** - Create new documents with template support and JSON validation
+- ✏️ **Edit Documents** - Modify existing documents with extended JSON support
 - 📊 **Advanced Analytics** - Field analysis, time series, correlation analysis
 - 📐 **Schema Explorer** - Automatic structure detection and field analysis
 
 ### Advanced Features
-- 📦 **Bulk Operations** - Field operations, bulk updates, data generation
+- 📦 **Bulk Operations** - Field operations, bulk updates, data generation (permission-protected)
 - 💾 **Backup & Restore** - One-click database backup with compression
 - 📥 **Import/Export** - JSON/CSV support with bulk import preview
-- 🛠️ **Collection Tools** - Create, rename, clone, drop collections
+- 🛠️ **Collection Tools** - Create, rename, clone, drop collections (admin-only)
 - 📇 **Index Management** - Create, view, and drop collection indexes
 - ⚡ **Performance Monitoring** - Query profiling and server statistics
-- 🔒 **Enterprise Security** - CSRF, rate limiting, input sanitization, audit logging
+- 🔒 **Enterprise Security** - CSRF, rate limiting, input sanitization, comprehensive audit logging
+- 👥 **User Management** - Full CRUD operations for user accounts (admin-only)
+- 📊 **Audit Log Viewer** - Advanced filtering, statistics, and export capabilities
 - 🎨 **Modern UI** - Responsive design with dark/light theme support
 
 [See complete feature list →](FEATURES.md)
@@ -38,13 +47,13 @@ A modern, secure, feature-rich web-based administration interface for MongoDB da
 ## 🛠️ Installation & Setup
 
 ### Prerequisites
-- **PHP 7.0 or higher** (tested with PHP 8.0+)
+- **PHP 8.0 or higher** (tested with PHP 8.1+)
 - **MongoDB 3.0 or higher** (tested with MongoDB 5.0+)
 - **Composer** - PHP package manager
 - **MongoDB PHP Driver** - (auto-installed via Composer)
 - **Web Server** - Apache, Nginx, or PHP built-in server
 
-### Installation Steps
+### Quick Start with PHP Built-in Server
 
 #### 1. Clone or Download Repository
 ```bash
@@ -52,14 +61,10 @@ git clone https://github.com/frame-dev/MongoDBAdminPanel.git
 cd MongoDBAdminPanel
 ```
 
-Or download and extract the ZIP file to your web root.
-
 #### 2. Install PHP Dependencies
 ```bash
 composer install
 ```
-
-This installs MongoDB PHP Driver and PSR logging libraries automatically.
 
 #### 3. Create Required Directories
 ```bash
@@ -71,34 +76,33 @@ mkdir -p backups logs
 chmod 755 backups logs
 ```
 
-#### 4. Configure Directory Permissions
+#### 4. Start Development Server
 ```bash
-# Linux/Mac - Set write permissions
-chmod 755 backups logs
-chmod 644 styles.css config/* includes/* templates/*
-
-# Windows - Ensure backups and logs folders are writable
-```
-
-#### 5. Start Development Server
-```bash
-# Using PHP built-in server
-php -S localhost:8080
+# Using PHP built-in server with router
+php -S localhost:2000 router.php
 
 # Access the panel
-# Open browser: http://localhost:8080
+# Open browser: http://localhost:2000
 ```
 
-#### 6. First-Time Connection
-1. Open `http://localhost:8080` in your browser
-2. Enter MongoDB connection details:
-   - **Hostname:** localhost (or your MongoDB server)
-   - **Port:** 27017 (default MongoDB port)
-   - **Database:** your_database_name
-   - **Username:** (optional, leave blank if no auth)
-   - **Password:** (optional, leave blank if no auth)
-3. Select a collection to browse
-4. Click "Connect" to establish connection
+#### 5. First-Time Setup
+1. **Connect to MongoDB:**
+   - Enter MongoDB connection details (hostname, port, database, collection)
+   - Username/password optional if MongoDB has no authentication
+   - Click "Connect"
+
+2. **Create First User (Admin):**
+   - First registered user automatically becomes Admin
+   - Fill in registration form with:
+     - Username (unique)
+     - Email (unique)
+     - Password (min 8 characters, with uppercase, number, special char)
+     - Full name
+   - Click "Register"
+
+3. **Login & Start Managing:**
+   - Use your credentials to log in
+   - Dashboard will show with full admin privileges
 
 ### Deployment to Production
 
@@ -140,23 +144,38 @@ server {
 
 ```
 MongoDBAdminPanel/
-├── index.php                 # Main application entry point (5600+ lines)
+├── index.php                 # Main application (2000+ lines) - routing & UI
+├── router.php                # PHP dev server router with static file handling
 ├── styles.css               # Enhanced CSS with animations & responsive design
-├── composer.json            # PHP dependencies configuration
-├── composer.lock            # Dependency lock file
+├── composer.json            # PHP dependencies
+├── composer.lock            # Dependency lock
 ├── 
 ├── config/
+│   ├── auth.php             # Authentication & RBAC (850+ lines)
 │   ├── database.php         # MongoDB connection management
-│   └── security.php         # Security functions & validation (CSRF, sanitization)
+│   ├── security.php         # Security functions (CSRF, sanitization, validation)
+│   └── button-fixes.php     # POST request handlers (550+ lines)
 ├── 
 ├── includes/
-│   ├── handlers.php         # Form processing with security checks
-│   ├── statistics.php       # Data retrieval & analysis functions
-│   └── backup.php           # Backup/restore utilities & audit logging
+│   ├── handlers.php         # Form processing (1400+ lines)
+│   ├── statistics.php       # Data retrieval & analysis
+│   ├── backup.php           # Backup/restore & audit logging system
+│   ├── modals.php           # UI modal components
+│   ├── javascript.php       # JavaScript utilities
+│   └── tabs/                # Modular tab content files
+│       ├── dashboard.php    # Dashboard with statistics
+│       ├── browse.php       # Browse & view documents
+│       ├── add.php          # Add new documents
+│       ├── bulk.php         # Bulk operations
+│       ├── query.php        # Query builder & custom queries
+│       ├── users.php        # User management (admin-only)
+│       ├── audit.php        # Audit log viewer (admin-only)
+│       └── security.php     # Security settings & logs
 │
 ├── templates/
-│   ├── header.php           # HTML header, CSS, & JavaScript includes
-│   ├── footer.php           # HTML footer & closing tags
+│   ├── header.php           # HTML header, CSS, JavaScript
+│   ├── footer.php           # HTML footer
+│   ├── login.php            # Login/registration page
 │   └── connection.php       # MongoDB connection form
 │
 ├── vendor/                  # Composer dependencies (auto-generated)
@@ -171,6 +190,7 @@ MongoDBAdminPanel/
 ├── README.md                # This file
 ├── FEATURES.md              # Complete feature documentation
 ├── SECURITY.md              # Security implementation details
+├── USER_AUTHENTICATION_IMPLEMENTATION.md  # Auth system docs
 └── LICENSE                  # MIT License
 ```
 
@@ -178,123 +198,203 @@ MongoDBAdminPanel/
 
 ## 🔒 Security Features
 
-This panel implements **11+ layers of security protection** following OWASP best practices:
+This panel implements **15+ layers of security protection** following OWASP best practices:
 
-### 1. ✅ **User Authentication System**
-- BCRYPT password hashing with cost 12
-- Username/email unique validation
-- Account lockout after 5 failed attempts (15 minutes)
-- Login attempt tracking
-- Session fixation prevention
-- First user automatically becomes admin
+### 1. ✅ **User Authentication & Authorization**
+- **BCRYPT Password Hashing** - Cost factor 12, secure storage in MongoDB
+- **Role-Based Access Control** - 5 predefined roles with granular permissions:
+  - **Admin** - Full system access (20/20 permissions)
+  - **Editor** - Data management (15/20 permissions)
+  - **Developer** - Technical operations (14/20 permissions)
+  - **Analyst** - Read & analyze data (8/20 permissions)
+  - **Viewer** - Read-only access (4/20 permissions)
+- **Permission System** - 20 granular permissions:
+  - `view_data`, `create_data`, `edit_data`, `delete_data`
+  - `manage_collections`, `manage_indexes`, `manage_users`
+  - `view_logs`, `edit_settings`, `view_security`
+  - `bulk_operations`, `export_data`, `import_data`
+  - `view_analytics`, `view_schema`, and more...
+- **Account Lockout** - 5 failed attempts = 15 minute lockout
+- **Session Security** - Fixation prevention, secure cookies
+- **First User Auto-Admin** - First registered user becomes admin
 
-### 2. ✅ **CSRF Protection (Cross-Site Request Forgery)**
+### 2. ✅ **Comprehensive Audit Logging**
+- **50+ Event Types** - All critical actions tracked:
+  - Authentication events (login, logout, lockout)
+  - Data operations (create, update, delete, bulk)
+  - User management (create, update, delete, activate)
+  - Collection operations (create, drop, rename, clone)
+  - Security events (permission denied, CSRF failures)
+  - System events (settings changed, backups created)
+- **20+ Tracked Fields Per Event**:
+  - Timestamp, action, severity, category
+  - User info (username, user_id, role, session_id)
+  - Request details (method, URI, IP, user agent)
+  - Database context (database, collection)
+  - System metrics (memory usage, execution time)
+- **Severity Levels** - info, warning, error, critical
+- **Categories** - auth, data, system, security, user
+- **Audit Log Viewer** - Advanced filtering, statistics, export (admin-only)
+- **TTL Index** - Automatic cleanup after 90 days
+
+### 3. ✅ **CSRF Protection**
 - Unique token per session
-- Required for all dangerous operations (delete, update, import)
+- Required for all dangerous operations
+- Timeout after 60 minutes
 - Session-based validation
 
-### 2. ✅ **CSRF Protection (Cross-Site Request Forgery)**
-- Unique token per session
-- Required for all dangerous operations (delete, update, import)
-- Session-based validation
-
-### 3. ✅ **Rate Limiting**
+### 4. ✅ **Rate Limiting**
 - 30 requests per 60 seconds per action
-- Prevents brute force and DoS attacks
+- Prevents brute force attacks
 - Session-based tracking with security logging
+- Automatic cooldown period
 
-### 3. ✅ **Rate Limiting**
-- 30 requests per 60 seconds per action
-- Prevents brute force and DoS attacks
-- Session-based tracking with security logging
-
-### 4. ✅ **Input Sanitization**
+### 5. ✅ **Input Sanitization**
 - XSS prevention on all user inputs
 - HTML entity encoding with UTF-8
 - Recursive array sanitization
-- `htmlspecialchars()` with `ENT_QUOTES` flag
+- `htmlspecialchars()` with `ENT_QUOTES | ENT_HTML5`
 
-### 4. ✅ **Input Sanitization**
-- XSS prevention on all user inputs
-- HTML entity encoding with UTF-8
-- Recursive array sanitization
-- `htmlspecialchars()` with `ENT_QUOTES` flag
-
-### 5. ✅ **JSON Validation**
-- Detection of dangerous patterns (`$where`, `eval()`, `function`, `constructor`)
+### 6. ✅ **JSON Validation**
+- Detection of dangerous patterns:
+  - `$where` (MongoDB code execution)
+  - `eval(` (JavaScript evaluation)
+  - `function(` (function definitions)
+  - `constructor` (prototype pollution)
+- **MongoDB Extended JSON Support**:
+  - Allows `$oid`, `$date`, `$numberLong`, etc.
+  - Validates structure before database operations
 - Prevents code injection attacks
-- Validation before document insertion
 
-### 5. ✅ **JSON Validation**
-- Detection of dangerous patterns (`$where`, `eval()`, `function`, `constructor`)
-- Prevents code injection attacks
-- Validation before document insertion
-
-### 6. ✅ **MongoDB Query Sanitization**
+### 7. ✅ **MongoDB Query Sanitization**
 - Whitelist-based operator validation
 - Allowed operators: `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$regex`, `$exists`, `$or`, `$and`
 - NoSQL injection prevention
+- Recursive array filtering
 
-### 6. ✅ **MongoDB Query Sanitization**
-- Whitelist-based operator validation
-- Allowed operators: `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$regex`, `$exists`, `$or`, `$and`
-- NoSQL injection prevention
-
-### 7. ✅ **Field & Collection Name Validation**
+### 8. ✅ **Field & Collection Name Validation**
 - Alphanumeric, underscore, dash only
 - Maximum 64 characters for collections
 - Prevents `$` prefix (operator injection)
 - No null bytes or special characters
 
-### 7. ✅ **Field & Collection Name Validation**
-- Alphanumeric, underscore, dash only
-- Maximum 64 characters for collections
-- Prevents `$` prefix (operator injection)
-- No null bytes or special characters
+### 9. ✅ **Permission Enforcement**
+- **UI Level** - Tabs/buttons hidden based on permissions
+- **Backend Level** - All operations validate permissions
+- **Audit Trail** - All denied operations logged
+- **Granular Control** - Separate permissions for read/write/delete
 
-### 8. ✅ **File Upload Security**
-- Maximum 5 MB file size
-- MIME type validation
-- File extension checking
-- Stored outside web root when possible
-
-### 8. ✅ **File Upload Security**
-- Maximum 5 MB file size
-- MIME type validation
-- File extension checking
-- Stored outside web root when possible
-
-### 9. ✅ **Security Event Logging**
+### 10. ✅ **Security Event Logging**
 - All violations logged with timestamp
 - Session ID and action tracking
+- IP address and user agent logging
 - Stored in `logs/` directory
-- Viewable in Security tab for audit
 
-### 9. ✅ **Security Event Logging**
-- All violations logged with timestamp
-- Session ID and action tracking
-- Stored in `logs/` directory
-- Viewable in Security tab for audit
+### 11. ✅ **Post/Redirect/Get Pattern**
+- Prevents form resubmission on refresh
+- All POST actions redirect after processing
+- Collection parameter preserved in redirects
+- Session-based message passing
 
-### 10. ✅ **Audit Trail**
-- Complete operation history
-- Who, what, when, where tracking
-- Database backup metadata
-- Import/export activity logs
-
-### 10. ✅ **Audit Trail**
-- Complete operation history
-- Who, what, when, where tracking
-- Database backup metadata
-- Import/export activity logs
-
-### 11. ✅ **Session Security**
+### 12. ✅ **Session Security**
 - Session fixation prevention
 - Secure session handling
-- Cookie security flags
-- Token regeneration
+- Cookie security flags (when HTTPS)
+- Automatic session regeneration
+
+### 13. ✅ **File Upload Security**
+- Maximum 5 MB file size
+- MIME type validation
+- File extension checking
+- JSON structure validation for imports
+
+### 14. ✅ **Output Buffering Control**
+- Clean output before redirects
+- Prevents header injection
+- Proper error handling
+
+### 15. ✅ **Password Security**
+- Minimum 8 characters
+- Must contain: uppercase, lowercase, number, special character
+- BCRYPT hashing with cost 12
+- Password confirmation on registration
 
 [Read full security documentation →](SECURITY.md)
+
+---
+
+## 👥 User Roles & Permissions
+
+### Role Hierarchy
+
+| Role | Access Level | Permissions | Use Case |
+|------|--------------|-------------|----------|
+| **Admin** | Full Access | 20/20 | System administrators |
+| **Editor** | Data Management | 15/20 | Content managers |
+| **Developer** | Technical Ops | 14/20 | Application developers |
+| **Analyst** | Read & Analyze | 8/20 | Data analysts |
+| **Viewer** | Read Only | 4/20 | Stakeholders, viewers |
+
+### Permission Matrix
+
+| Permission | Admin | Editor | Developer | Analyst | Viewer |
+|------------|-------|--------|-----------|---------|--------|
+| view_data | ✅ | ✅ | ✅ | ✅ | ✅ |
+| create_data | ✅ | ✅ | ✅ | ❌ | ❌ |
+| edit_data | ✅ | ✅ | ✅ | ❌ | ❌ |
+| delete_data | ✅ | ✅ | ❌ | ❌ | ❌ |
+| bulk_operations | ✅ | ✅ | ✅ | ❌ | ❌ |
+| export_data | ✅ | ✅ | ✅ | ✅ | ✅ |
+| import_data | ✅ | ✅ | ✅ | ❌ | ❌ |
+| manage_collections | ✅ | ❌ | ✅ | ❌ | ❌ |
+| manage_indexes | ✅ | ❌ | ✅ | ❌ | ❌ |
+| view_schema | ✅ | ✅ | ✅ | ✅ | ✅ |
+| view_analytics | ✅ | ✅ | ✅ | ✅ | ❌ |
+| execute_aggregations | ✅ | ✅ | ✅ | ✅ | ❌ |
+| manage_users | ✅ | ❌ | ❌ | ❌ | ❌ |
+| view_logs | ✅ | ❌ | ❌ | ❌ | ❌ |
+| view_security | ✅ | ✅ | ✅ | ❌ | ❌ |
+| manage_security | ✅ | ❌ | ❌ | ❌ | ❌ |
+| view_settings | ✅ | ✅ | ✅ | ✅ | ✅ |
+| edit_settings | ✅ | ❌ | ✅ | ❌ | ❌ |
+| backup_restore | ✅ | ❌ | ✅ | ❌ | ❌ |
+| view_performance | ✅ | ❌ | ✅ | ✅ | ❌ |
+
+---
+
+## 📊 Audit Logging
+
+### Event Categories
+
+1. **Authentication Events** (category: `auth`)
+   - user_login_success, user_login_failed
+   - account_locked, user_logout
+   - password_changed, user_registered
+
+2. **Data Operations** (category: `data`)
+   - document_added, document_updated, document_deleted
+   - document_duplicated, bulk_update, bulk_delete
+   - find_replace, field_statistics_generated
+
+3. **User Management** (category: `user`)
+   - user_created, user_updated, user_deleted
+   - user_activated, user_deactivated
+   - admin_password_reset
+
+4. **Collection Operations** (category: `system`)
+   - collection_created, collection_dropped, collection_renamed
+   - collection_cloned, index_created, index_dropped
+
+5. **Security Events** (category: `security`)
+   - permission_denied, csrf_failed, rate_limit_exceeded
+   - invalid_json, dangerous_content, audit_log_exported
+
+### Audit Log Viewer Features
+- **Real-time Statistics Dashboard**
+- **Advanced Filtering** - by action, user, category, severity, date range
+- **Detailed Log Entries** - all 20+ fields displayed
+- **Export Capability** - JSON format with filters applied
+- **Maintenance Tools** - clear old logs with configurable retention
 
 ---
 
@@ -694,39 +794,96 @@ Solution:
 
 ## 🔄 Version History
 
-### v1.0.0 (January 2026) - Current
-- ✅ Full MongoDB CRUD operations
+### v2.0.0 (January 2026) - Current Release ✅
+**Enterprise Security & Authentication Update**
+
+#### Core Features
+- ✅ Full MongoDB CRUD operations with permission control
+- ✅ Visual query builder with operator support
+- ✅ Document templates with MongoDB Extended JSON
+- ✅ Backup and restore with compression
+- ✅ Bulk operations (update, delete, field operations)
+- ✅ Import/export (JSON, CSV) with validation
+- ✅ Modern UI with animations and dark mode theme
+- ✅ Persistent query history (database storage with 30-day retention)
+
+#### Security Features (15+ Layers)
+- ✅ User Authentication System (BCRYPT password hashing, cost 12)
+- ✅ Role-Based Access Control (RBAC)
+  - 5 roles: Admin, Editor, Developer, Analyst, Viewer
+  - 20+ granular permissions
+  - UI and backend permission enforcement
+- ✅ Account Security (lockout after 5 failed attempts, 15 min cooldown)
+- ✅ Session Management (fixation prevention, secure cookies)
+- ✅ CSRF Protection (token-based validation)
+- ✅ Rate Limiting (30 requests per 60 seconds)
+- ✅ Input Sanitization (XSS prevention)
+- ✅ JSON Validation (MongoDB Extended JSON support, dangerous pattern detection)
+- ✅ MongoDB Query Sanitization (whitelist-based operators)
+- ✅ Post/Redirect/Get Pattern (prevents form resubmission)
+
+#### Advanced Features
+- ✅ **User Management Dashboard** (admin-only)
+  - Create, edit, delete, activate/deactivate users
+  - Role assignment and permission management
+  - Password reset capability
+  - User activity tracking
+- ✅ **Comprehensive Audit Logging**
+  - 50+ event types across 5 categories (auth, data, user, system, security)
+  - 20+ tracked fields per event (user, IP, timestamp, context, metrics)
+  - 4 severity levels (info, warning, error, critical)
+  - TTL index for automatic cleanup (90 days)
+- ✅ **Audit Log Viewer** (admin-only)
+  - Advanced filtering (by action, user, category, severity, date range)
+  - Real-time statistics dashboard
+  - Export capability (JSON format)
+  - Maintenance tools (clear old logs)
+- ✅ Router support for PHP built-in server
+- ✅ Collection parameter preservation across redirects
+
+### v1.0.0 (December 2025)
+**Initial Release**
+- ✅ Basic MongoDB CRUD operations
 - ✅ Visual query builder
 - ✅ Document templates
 - ✅ Backup and restore
-- ✅ Bulk operations
 - ✅ Import/export (JSON, CSV)
-- ✅ Security audit logging
-- ✅ Modern UI with animations
-- ✅ 11+ security layers
-- ✅ Query history tracking (persistent database storage)
-- ✅ User authentication system (BCRYPT passwords, 3 roles)
+- ✅ Basic security (CSRF, rate limiting, input sanitization)
+- ✅ Modern animated UI
 
-### v1.1.0 (Planned Q2 2026)
-- [ ] Role-based access control (enhanced permissions)
-- ✅ Persistent query history (database storage)
-- ✅ Dark mode theme
-- [ ] Custom field validators
-- [ ] User management dashboard
+---
 
-### v1.2.0 (Planned Q3 2026)
-- [ ] Scheduled backups (cron)
-- [ ] Email notifications
-- [ ] Two-factor authentication
-- [ ] Mobile responsive design
-- [ ] Real-time sync
+## 🚀 Upcoming Features
 
-### v2.0.0 (Planned Q4 2026)
-- [ ] Aggregation pipeline builder
-- [ ] Real-time monitoring dashboard
-- [ ] Performance metrics and indexing advisor
+### v2.1.0 (Planned Q2 2026)
+- [ ] Two-factor authentication (TOTP, SMS)
+- [ ] Custom field validators with regex patterns
+- [ ] Scheduled backups (cron integration)
+- [ ] Email notifications for security events
+- [ ] Enhanced mobile responsive design
+- [ ] Password complexity policies (configurable)
+- [ ] Session timeout customization
+- [ ] IP whitelisting/blacklisting
+
+### v2.2.0 (Planned Q3 2026)
+- [ ] Aggregation pipeline builder (visual interface)
+- [ ] Real-time monitoring dashboard (WebSocket)
+- [ ] Performance metrics and query profiling
+- [ ] Indexing advisor (automatic suggestions)
 - [ ] Collection relationship visualization
 - [ ] Advanced data visualization charts
+- [ ] Export to multiple formats (XML, Excel, Parquet)
+- [ ] Data transformation pipelines
+
+### v3.0.0 (Planned Q4 2026)
+- [ ] REST API for programmatic access
+- [ ] GraphQL API interface
+- [ ] Webhook support for external integrations
+- [ ] Real-time collaboration (multi-user editing)
+- [ ] Integration with BI tools (Tableau, Power BI)
+- [ ] Machine learning insights (anomaly detection, predictions)
+- [ ] Custom dashboard builder
+- [ ] Mobile native app (iOS, Android)
 
 ---
 
