@@ -107,7 +107,9 @@ function registerUser($username, $email, $password, $fullName = '', $role = 'vie
         return ['success' => false, 'message' => 'Password must be at least 8 characters'];
     }
     
-    if (!in_array($role, ['admin', 'editor', 'viewer'])) {
+    // Validate role
+    $validRoles = ['admin', 'editor', 'viewer', 'developer', 'analyst'];
+    if (!in_array($role, $validRoles)) {
         $role = 'viewer';
     }
     
@@ -143,6 +145,7 @@ function registerUser($username, $email, $password, $fullName = '', $role = 'vie
         $result = $usersCollection->insertOne($user);
         
         logSecurityEvent('user_registered', ['username' => $username, 'email' => $email]);
+        auditLog('user_registered', ['username' => $username, 'role' => $role, 'email' => $email], 'info', 'user');
         
         return [
             'success' => true,
@@ -212,6 +215,7 @@ function authenticateUser($username, $password) {
             if ($failedAttempts >= 5) {
                 $lockData['locked_until'] = new MongoDB\BSON\UTCDateTime((time() + 900) * 1000);
                 logSecurityEvent('auth_account_locked', ['username' => $username, 'attempts' => $failedAttempts]);
+                auditLog('account_locked', ['username' => $username, 'attempts' => $failedAttempts], 'critical', 'security');
             }
             
             $usersCollection->updateOne(
@@ -220,6 +224,7 @@ function authenticateUser($username, $password) {
             );
             
             logSecurityEvent('auth_invalid_password', ['username' => $username]);
+            auditLog('user_login_failed', ['username' => $username, 'attempts' => $failedAttempts], 'warning', 'auth');
             return ['success' => false, 'message' => 'Invalid username or password'];
         }
         
@@ -235,6 +240,7 @@ function authenticateUser($username, $password) {
         );
         
         logSecurityEvent('user_logged_in', ['username' => $username]);
+        auditLog('user_login_success', ['username' => $username, 'login_count' => ($user['login_count'] ?? 0) + 1], 'info', 'auth');
         
         return [
             'success' => true,
@@ -294,6 +300,162 @@ function getCurrentUser() {
 }
 
 /**
+ * Get all available roles with their permissions
+ * 
+ * @return array Role definitions
+ */
+function getAllRoles() {
+    return [
+        'admin' => [
+            'name' => 'Administrator',
+            'description' => 'Full system access with user management capabilities',
+            'level' => 3,
+            'permissions' => [
+                'view_data' => true,
+                'create_data' => true,
+                'edit_data' => true,
+                'delete_data' => true,
+                'bulk_operations' => true,
+                'manage_users' => true,
+                'manage_roles' => true,
+                'view_settings' => true,
+                'edit_settings' => true,
+                'view_security' => true,
+                'manage_security' => true,
+                'view_analytics' => true,
+                'export_data' => true,
+                'import_data' => true,
+                'manage_collections' => true,
+                'manage_database' => true,
+                'view_logs' => true,
+                'clear_logs' => true,
+                'create_backups' => true,
+                'restore_backups' => true,
+            ]
+        ],
+        'editor' => [
+            'name' => 'Editor',
+            'description' => 'Can view and modify data, but cannot manage users or system settings',
+            'level' => 2,
+            'permissions' => [
+                'view_data' => true,
+                'create_data' => true,
+                'edit_data' => true,
+                'delete_data' => true,
+                'bulk_operations' => true,
+                'manage_users' => false,
+                'manage_roles' => false,
+                'view_settings' => true,
+                'edit_settings' => false,
+                'view_security' => false,
+                'manage_security' => false,
+                'view_analytics' => true,
+                'export_data' => true,
+                'import_data' => true,
+                'manage_collections' => false,
+                'manage_database' => false,
+                'view_logs' => false,
+                'clear_logs' => false,
+                'create_backups' => true,
+                'restore_backups' => false,
+            ]
+        ],
+        'viewer' => [
+            'name' => 'Viewer',
+            'description' => 'Read-only access to view data and basic analytics',
+            'level' => 1,
+            'permissions' => [
+                'view_data' => true,
+                'create_data' => false,
+                'edit_data' => false,
+                'delete_data' => false,
+                'bulk_operations' => false,
+                'manage_users' => false,
+                'manage_roles' => false,
+                'view_settings' => true,
+                'edit_settings' => false,
+                'view_security' => false,
+                'manage_security' => false,
+                'view_analytics' => true,
+                'export_data' => true,
+                'import_data' => false,
+                'manage_collections' => false,
+                'manage_database' => false,
+                'view_logs' => false,
+                'clear_logs' => false,
+                'create_backups' => false,
+                'restore_backups' => false,
+            ]
+        ],
+        'analyst' => [
+            'name' => 'Analyst',
+            'description' => 'Can view data and analytics, with export capabilities',
+            'level' => 1,
+            'permissions' => [
+                'view_data' => true,
+                'create_data' => false,
+                'edit_data' => false,
+                'delete_data' => false,
+                'bulk_operations' => false,
+                'manage_users' => false,
+                'manage_roles' => false,
+                'view_settings' => true,
+                'edit_settings' => false,
+                'view_security' => false,
+                'manage_security' => false,
+                'view_analytics' => true,
+                'export_data' => true,
+                'import_data' => false,
+                'manage_collections' => false,
+                'manage_database' => false,
+                'view_logs' => false,
+                'clear_logs' => false,
+                'create_backups' => false,
+                'restore_backups' => false,
+            ]
+        ],
+        'developer' => [
+            'name' => 'Developer',
+            'description' => 'Advanced access for development and testing, can manage collections',
+            'level' => 2,
+            'permissions' => [
+                'view_data' => true,
+                'create_data' => true,
+                'edit_data' => true,
+                'delete_data' => true,
+                'bulk_operations' => true,
+                'manage_users' => false,
+                'manage_roles' => false,
+                'view_settings' => true,
+                'edit_settings' => false,
+                'view_security' => true,
+                'manage_security' => false,
+                'view_analytics' => true,
+                'export_data' => true,
+                'import_data' => true,
+                'manage_collections' => true,
+                'manage_database' => false,
+                'view_logs' => true,
+                'clear_logs' => false,
+                'create_backups' => true,
+                'restore_backups' => true,
+            ]
+        ],
+    ];
+}
+
+/**
+ * Get role details by role name
+ * 
+ * @param string $roleName Role name
+ * @return array|null Role details or null if not found
+ */
+function getRoleDetails($roleName) {
+    $roles = getAllRoles();
+    return $roles[$roleName] ?? null;
+}
+
+/**
  * Check if current user has specific role
  * 
  * @param string $role Role to check ('admin', 'editor', 'viewer')
@@ -311,7 +473,7 @@ function userHasRole($role) {
     }
     
     // Permission hierarchy: admin > editor > viewer
-    $hierarchy = ['admin' => 3, 'editor' => 2, 'viewer' => 1];
+    $hierarchy = ['admin' => 3, 'editor' => 2, 'viewer' => 1, 'developer' => 2, 'analyst' => 1];
     $roleLevel = $hierarchy[$role] ?? 0;
     $userLevel = $hierarchy[$user['role']] ?? 0;
     
@@ -330,36 +492,14 @@ function userHasPermission($action) {
         return false;
     }
     
-    // Define permissions by role
-    $permissions = [
-        'admin' => ['*'], // All permissions
-        'editor' => [
-            'view_documents',
-            'add_document',
-            'edit_document',
-            'delete_document',
-            'execute_query',
-            'export_data',
-            'import_data',
-            'view_analytics',
-            'manage_templates'
-        ],
-        'viewer' => [
-            'view_documents',
-            'execute_query',
-            'export_data',
-            'view_analytics'
-        ]
-    ];
-    
-    $userPermissions = $permissions[$user['role']] ?? [];
-    
-    // Admin has all permissions
-    if (in_array('*', $userPermissions)) {
-        return true;
+    // Get role details
+    $roleDetails = getRoleDetails($user['role']);
+    if (!$roleDetails) {
+        return false;
     }
     
-    return in_array($action, $userPermissions);
+    // Check if permission exists in role
+    return $roleDetails['permissions'][$action] ?? false;
 }
 
 /**
@@ -369,6 +509,7 @@ function logoutUser() {
     $user = getCurrentUser();
     if ($user) {
         logSecurityEvent('user_logged_out', ['username' => $user['username']]);
+        auditLog('user_logout', ['username' => $user['username']], 'info', 'auth');
     }
     
     // Clear session
@@ -402,6 +543,7 @@ function changeUserPassword($userId, $oldPassword, $newPassword) {
         
         if (!verifyPassword($oldPassword, $user['password_hash'])) {
             logSecurityEvent('password_change_failed', ['user_id' => $userId]);
+            auditLog('password_change_failed', ['user_id' => $userId], 'warning', 'security');
             return ['success' => false, 'message' => 'Current password is incorrect'];
         }
         
@@ -411,6 +553,7 @@ function changeUserPassword($userId, $oldPassword, $newPassword) {
         );
         
         logSecurityEvent('password_changed', ['user_id' => $userId]);
+        auditLog('password_changed', ['user_id' => $userId], 'warning', 'security');
         
         return ['success' => true, 'message' => 'Password changed successfully'];
     } catch (Exception $e) {
@@ -479,7 +622,9 @@ function updateUserRole($userId, $newRole) {
         return ['success' => false, 'message' => 'Database connection required'];
     }
     
-    if (!in_array($newRole, ['admin', 'editor', 'viewer'])) {
+    // Validate role
+    $validRoles = ['admin', 'editor', 'viewer', 'developer', 'analyst'];
+    if (!in_array($newRole, $validRoles)) {
         return ['success' => false, 'message' => 'Invalid role'];
     }
     
@@ -528,5 +673,184 @@ function deactivateUser($userId) {
         return ['success' => true, 'message' => 'User deactivated successfully'];
     } catch (Exception $e) {
         return ['success' => false, 'message' => 'Error deactivating user'];
+    }
+}
+
+/**
+ * Activate user account (admin only)
+ * 
+ * @param string $userId User ID
+ * @return array ['success' => bool, 'message' => string]
+ */
+function activateUser($userId) {
+    global $database;
+    
+    if (!userHasRole('admin')) {
+        return ['success' => false, 'message' => 'Permission denied'];
+    }
+    
+    if ($database === null) {
+        return ['success' => false, 'message' => 'Database connection required'];
+    }
+    
+    try {
+        $usersCollection = $database->getCollection('_auth_users');
+        $usersCollection->updateOne(
+            ['_id' => new MongoDB\BSON\ObjectId($userId)],
+            ['$set' => ['is_active' => true]]
+        );
+        
+        logSecurityEvent('user_activated', ['user_id' => $userId]);
+        
+        return ['success' => true, 'message' => 'User activated successfully'];
+    } catch (Exception $e) {
+        return ['success' => false, 'message' => 'Error activating user'];
+    }
+}
+
+/**
+ * Delete user account (admin only)
+ * 
+ * @param string $userId User ID
+ * @return array ['success' => bool, 'message' => string]
+ */
+function deleteUser($userId) {
+    global $database;
+    
+    if (!userHasRole('admin')) {
+        return ['success' => false, 'message' => 'Permission denied'];
+    }
+    
+    if ($database === null) {
+        return ['success' => false, 'message' => 'Database connection required'];
+    }
+    
+    // Prevent deleting own account
+    $currentUser = getCurrentUser();
+    if ((string)$currentUser['_id'] === $userId) {
+        return ['success' => false, 'message' => 'Cannot delete your own account'];
+    }
+    
+    try {
+        $usersCollection = $database->getCollection('_auth_users');
+        $result = $usersCollection->deleteOne(['_id' => new MongoDB\BSON\ObjectId($userId)]);
+        
+        if ($result->getDeletedCount() > 0) {
+            logSecurityEvent('user_deleted', ['user_id' => $userId]);
+            return ['success' => true, 'message' => 'User deleted successfully'];
+        } else {
+            return ['success' => false, 'message' => 'User not found'];
+        }
+    } catch (Exception $e) {
+        return ['success' => false, 'message' => 'Error deleting user: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Update user details (admin only)
+ * 
+ * @param string $userId User ID
+ * @param array $data User data to update
+ * @return array ['success' => bool, 'message' => string]
+ */
+function updateUser($userId, $data) {
+    global $database;
+    
+    if (!userHasRole('admin')) {
+        return ['success' => false, 'message' => 'Permission denied'];
+    }
+    
+    if ($database === null) {
+        return ['success' => false, 'message' => 'Database connection required'];
+    }
+    
+    try {
+        $usersCollection = $database->getCollection('_auth_users');
+        
+        // Check if username already exists for another user
+        if (isset($data['username'])) {
+            $existingUser = $usersCollection->findOne([
+                'username' => $data['username'],
+                '_id' => ['$ne' => new MongoDB\BSON\ObjectId($userId)]
+            ]);
+            if ($existingUser) {
+                return ['success' => false, 'message' => 'Username already exists'];
+            }
+        }
+        
+        // Check if email already exists for another user
+        if (isset($data['email'])) {
+            $existingEmail = $usersCollection->findOne([
+                'email' => $data['email'],
+                '_id' => ['$ne' => new MongoDB\BSON\ObjectId($userId)]
+            ]);
+            if ($existingEmail) {
+                return ['success' => false, 'message' => 'Email already exists'];
+            }
+        }
+        
+        // Prepare update data
+        $updateData = [];
+        if (isset($data['username'])) $updateData['username'] = $data['username'];
+        if (isset($data['email'])) $updateData['email'] = $data['email'];
+        if (isset($data['full_name'])) $updateData['full_name'] = $data['full_name'];
+        $validRoles = ['admin', 'editor', 'viewer', 'developer', 'analyst'];
+        if (isset($data['role']) && in_array($data['role'], $validRoles)) {
+            $updateData['role'] = $data['role'];
+        }
+        
+        if (empty($updateData)) {
+            return ['success' => false, 'message' => 'No valid data to update'];
+        }
+        
+        $usersCollection->updateOne(
+            ['_id' => new MongoDB\BSON\ObjectId($userId)],
+            ['$set' => $updateData]
+        );
+        
+        logSecurityEvent('user_updated', ['user_id' => $userId, 'fields' => array_keys($updateData)]);
+        
+        return ['success' => true, 'message' => 'User updated successfully'];
+    } catch (Exception $e) {
+        return ['success' => false, 'message' => 'Error updating user: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Admin reset user password (admin only)
+ * 
+ * @param string $userId User ID
+ * @param string $newPassword New password
+ * @return array ['success' => bool, 'message' => string]
+ */
+function adminResetPassword($userId, $newPassword) {
+    global $database;
+    
+    if (!userHasRole('admin')) {
+        return ['success' => false, 'message' => 'Permission denied'];
+    }
+    
+    if ($database === null) {
+        return ['success' => false, 'message' => 'Database connection required'];
+    }
+    
+    if (strlen($newPassword) < 6) {
+        return ['success' => false, 'message' => 'Password must be at least 6 characters'];
+    }
+    
+    try {
+        $usersCollection = $database->getCollection('_auth_users');
+        $passwordHash = password_hash($newPassword, PASSWORD_BCRYPT);
+        
+        $usersCollection->updateOne(
+            ['_id' => new MongoDB\BSON\ObjectId($userId)],
+            ['$set' => ['password_hash' => $passwordHash]]
+        );
+        
+        logSecurityEvent('admin_password_reset', ['user_id' => $userId]);
+        
+        return ['success' => true, 'message' => 'Password reset successfully'];
+    } catch (Exception $e) {
+        return ['success' => false, 'message' => 'Error resetting password: ' . $e->getMessage()];
     }
 }

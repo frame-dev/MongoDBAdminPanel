@@ -93,7 +93,9 @@ function validateJSON($json) {
         
         // Check for dangerous patterns
         $jsonStr = json_encode($decoded);
-        $dangerous = ['$where', 'eval', 'function', 'constructor'];
+        
+        // Allow MongoDB Extended JSON types but block dangerous patterns
+        $dangerous = ['$where', 'eval(', 'function(', 'constructor'];
         foreach ($dangerous as $pattern) {
             if (stripos($jsonStr, $pattern) !== false) {
                 return false;

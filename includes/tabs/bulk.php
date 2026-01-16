@@ -1,6 +1,13 @@
     <div id="bulk" class="tab-content">
         <h2>📦 Bulk Operations</h2>
 
+        <?php if (!userHasPermission('bulk_operations')): ?>
+            <div class="alert alert-warning">
+                <span class="alert-icon">⚠️</span>
+                <span class="alert-text">You don't have permission to perform bulk operations. Contact an administrator.</span>
+            </div>
+        <?php else: ?>
+
         <!-- Field Operations Section -->
         <div
             style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; color: white;">
@@ -197,5 +204,5 @@
             </div>
         </div>
     </div>
-
+    <?php endif; ?>
     <!-- Tools Tab -->

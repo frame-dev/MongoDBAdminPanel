@@ -29,6 +29,9 @@ require_once 'config/auth.php';
 // Load database configuration first (needed for authentication)
 require_once 'config/database.php';
 
+// Load backup and audit logging utilities (needed early for auditLog function)
+require_once 'includes/backup.php';
+
 // Handle authentication requests (now that database is loaded)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $authAction = $_POST['action'];
@@ -43,7 +46,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             createUserSession($result['user']);
             $_SESSION['auth_message'] = $result['message'];
             $_SESSION['auth_success'] = true;
-            header('Location: ' . $_SERVER['PHP_SELF']);
+            $redirectUrl = $_SERVER['PHP_SELF'];
+            if (!empty($_GET['collection'])) {
+                $redirectUrl .= '?collection=' . urlencode($_GET['collection']);
+            }
+            header('Location: ' . $redirectUrl);
             exit;
         } else {
             $_SESSION['auth_message'] = $result['message'];
@@ -84,12 +91,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $_SESSION['auth_message'] = 'Account created! You can now login.';
             }
         }
+        // Always redirect after registration to prevent resubmission
+        if (ob_get_length()) ob_clean();
+        $redirectUrl = $_SERVER['PHP_SELF'];
+        if (!empty($_GET['collection'])) {
+            $redirectUrl .= '?collection=' . urlencode($_GET['collection']);
+        }
+        header('Location: ' . $redirectUrl);
+        exit;
     }
     // Handle logout
     elseif ($authAction === 'logout') {
         logoutUser();
         $_SESSION['auth_message'] = 'You have been logged out.';
         $_SESSION['auth_success'] = true;
+        if (ob_get_length()) ob_clean();
         header('Location: ' . $_SERVER['PHP_SELF']);
         exit;
     }
@@ -105,7 +121,10 @@ if (isset($_SESSION['connection_error'])) {
 // Handle connection changes BEFORE checking if connected
 $disconnect = $_GET['disconnect'] ?? '';
 if ($disconnect) {
+    $oldConnection = $_SESSION['mongo_connection'] ?? [];
+    auditLog('database_disconnected', ['database' => $oldConnection['database'] ?? 'unknown'], 'info', 'system');
     unset($_SESSION['mongo_connection']);
+    if (ob_get_length()) ob_clean();
     header('Location: ' . $_SERVER['PHP_SELF']);
     exit;
 }
@@ -144,7 +163,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['connect'])) {
             'collection' => $collectionName
         ];
 
-        header('Location: ' . $_SERVER['PHP_SELF']);
+        auditLog('database_connected', ['hostname' => $hostName, 'database' => $dbName, 'collection' => $collectionName], 'info', 'system');
+
+        header('Location: ' . $_SERVER['PHP_SELF'] . '?collection=' . urlencode($collectionName));
         exit;
     } catch (Exception $e) {
         $connectionError = 'Connection failed: ' . $e->getMessage();
@@ -204,14 +225,15 @@ if (isset($_SESSION['field_stats']['data']) && is_array($_SESSION['field_stats']
 // Load search/filter and form handlers
 include 'includes/handlers.php';
 
-// FIX: Load button handler fixes for missing form logic
-include 'config/button-fixes.php';
+// Load collection statistics (only if connected)
+if ($database && isset($collectionName) && $collectionName) {
+    include 'includes/statistics.php';
+}
 
-// Load collection statistics
-include 'includes/statistics.php';
-
-// Load backup and audit logging utilities
-include 'includes/backup.php';
+// FIX: Load button handler fixes for missing form logic (only if connected)
+if ($database && isset($collection) && $collection) {
+    include 'config/button-fixes.php';
+}
 
 // Initialize Query History in session
 if (!isset($_SESSION['query_history'])) {
@@ -363,7 +385,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'clear_query_history') {
     clearQueryHistory();
     $message = '✅ Query history cleared successfully';
     $messageType = 'success';
-    auditLog('query_history_cleared', []);
+    auditLog('query_history_cleared', [], 'info', 'data');
 }
 
 // Handle Settings and Security tab form submissions
@@ -387,7 +409,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $message = '✅ Display settings saved successfully';
         $messageType = 'success';
-        auditLog('display_settings_saved', ['items_per_page' => $_SESSION['settings']['items_per_page']]);
+        auditLog('display_settings_saved', ['items_per_page' => $_SESSION['settings']['items_per_page']], 'info', 'system');
     }
     
     // Handle Performance Settings
@@ -404,7 +426,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $message = '✅ Performance settings saved successfully';
         $messageType = 'success';
-        auditLog('performance_settings_saved', ['query_timeout' => $_SESSION['settings']['query_timeout']]);
+        auditLog('performance_settings_saved', ['query_timeout' => $_SESSION['settings']['query_timeout']], 'info', 'system');
+    }
+    
+    // Handle Editor Settings
+    elseif ($action === 'save_editor_settings') {
+        $_SESSION['settings'] = $_SESSION['settings'] ?? [];
+        $_SESSION['settings']['editor_theme'] = sanitizeInput($_POST['editor_theme'] ?? 'monokai');
+        $_SESSION['settings']['editor_font_size'] = max(10, min(24, (int) ($_POST['editor_font_size'] ?? 14)));
+        $_SESSION['settings']['line_numbers'] = isset($_POST['line_numbers']);
+        $_SESSION['settings']['auto_format'] = isset($_POST['auto_format']);
+        $_SESSION['settings']['validate_on_type'] = isset($_POST['validate_on_type']);
+        $_SESSION['settings']['auto_refresh'] = isset($_POST['auto_refresh']);
+        $_SESSION['settings']['refresh_interval'] = max(5, min(300, (int) ($_POST['refresh_interval'] ?? 30)));
+        $_SESSION['settings']['confirm_deletions'] = isset($_POST['confirm_deletions']);
+        $_SESSION['settings']['show_tooltips'] = isset($_POST['show_tooltips']);
+        $_SESSION['settings']['keyboard_shortcuts'] = isset($_POST['keyboard_shortcuts']);
+        $_SESSION['settings']['save_scroll_position'] = isset($_POST['save_scroll_position']);
+        
+        $message = '✅ Editor settings saved successfully';
+        $messageType = 'success';
+        auditLog('editor_settings_saved', ['editor_theme' => $_SESSION['settings']['editor_theme']], 'info', 'system');
+    }
+    
+    // Handle Notification Settings
+    elseif ($action === 'save_notification_settings') {
+        $_SESSION['settings'] = $_SESSION['settings'] ?? [];
+        $_SESSION['settings']['show_success_messages'] = isset($_POST['show_success_messages']);
+        $_SESSION['settings']['show_error_messages'] = isset($_POST['show_error_messages']);
+        $_SESSION['settings']['show_warning_messages'] = isset($_POST['show_warning_messages']);
+        $_SESSION['settings']['auto_dismiss_alerts'] = isset($_POST['auto_dismiss_alerts']);
+        $_SESSION['settings']['alert_duration'] = max(2, min(30, (int) ($_POST['alert_duration'] ?? 5)));
+        $_SESSION['settings']['enable_sounds'] = isset($_POST['enable_sounds']);
+        $_SESSION['settings']['desktop_notifications'] = isset($_POST['desktop_notifications']);
+        $_SESSION['settings']['animation_effects'] = isset($_POST['animation_effects']);
+        $_SESSION['settings']['loading_indicators'] = isset($_POST['loading_indicators']);
+        $_SESSION['settings']['progress_bars'] = isset($_POST['progress_bars']);
+        
+        $message = '✅ Notification settings saved successfully';
+        $messageType = 'success';
+        auditLog('notification_settings_saved', ['alert_duration' => $_SESSION['settings']['alert_duration']], 'info', 'system');
+    }
+    
+    // Handle Export Settings
+    elseif ($action === 'save_export_settings') {
+        $_SESSION['settings'] = $_SESSION['settings'] ?? [];
+        $_SESSION['settings']['default_export_format'] = sanitizeInput($_POST['default_export_format'] ?? 'json');
+        $_SESSION['settings']['include_metadata'] = isset($_POST['include_metadata']);
+        $_SESSION['settings']['compress_exports'] = isset($_POST['compress_exports']);
+        $_SESSION['settings']['timestamp_exports'] = isset($_POST['timestamp_exports']);
+        $_SESSION['settings']['auto_backup'] = isset($_POST['auto_backup']);
+        $_SESSION['settings']['backup_frequency'] = sanitizeInput($_POST['backup_frequency'] ?? 'weekly');
+        $_SESSION['settings']['backup_retention'] = max(1, min(365, (int) ($_POST['backup_retention'] ?? 30)));
+        
+        $message = '✅ Export settings saved successfully';
+        $messageType = 'success';
+        auditLog('export_settings_saved', ['default_export_format' => $_SESSION['settings']['default_export_format']], 'info', 'system');
     }
     
     // Handle Security Settings
@@ -419,7 +496,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $message = '✅ Security settings saved successfully';
         $messageType = 'success';
-        auditLog('security_settings_saved', ['rate_limit_requests' => $_SESSION['settings']['rate_limit_requests']]);
+        auditLog('security_settings_saved', ['rate_limit_requests' => $_SESSION['settings']['rate_limit_requests']], 'info', 'security');
     }
     
     // Handle Export Settings
@@ -456,7 +533,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['settings'] = array_merge($_SESSION['settings'] ?? [], $importedSettings);
                 $message = '✅ Settings imported successfully';
                 $messageType = 'success';
-                auditLog('settings_imported', ['settings_count' => count($importedSettings)]);
+                auditLog('settings_imported', ['settings_count' => count($importedSettings)], 'warning', 'system');
             }
         }
     }
@@ -466,7 +543,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['cache'] = [];
         $message = '✅ Application cache cleared successfully';
         $messageType = 'success';
-        auditLog('cache_cleared', []);
+        auditLog('cache_cleared', [], 'info', 'system');
     }
     
     // Handle Settings Reset
@@ -484,7 +561,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
         $message = '✅ All settings reset to defaults';
         $messageType = 'success';
-        auditLog('settings_reset', []);
+        auditLog('settings_reset', [], 'warning', 'system');
     }
     
     // Handle Clear Logs
@@ -495,7 +572,133 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $message = '✅ Security logs cleared successfully';
         $messageType = 'success';
-        auditLog('logs_cleared', []);
+        auditLog('logs_cleared', [], 'warning', 'security');
+    }
+    
+    // Handle User Management Actions
+    elseif ($action === 'create_user') {
+        $username = sanitizeInput($_POST['username'] ?? '');
+        $email = sanitizeInput($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $passwordConfirm = $_POST['password_confirm'] ?? '';
+        $fullName = sanitizeInput($_POST['full_name'] ?? '');
+        $role = $_POST['role'] ?? 'viewer';
+        
+        // Validate password match
+        if ($password !== $passwordConfirm) {
+            $message = '❌ Passwords do not match';
+            $messageType = 'error';
+        } else {
+            $result = registerUser($username, $email, $password, $fullName, $role);
+            $message = $result['message'];
+            $messageType = $result['success'] ? 'success' : 'error';
+            if ($result['success']) {
+                auditLog('user_created', ['username' => $username, 'role' => $role, 'email' => $email], 'info', 'user');
+            } else {
+                auditLog('user_creation_failed', ['username' => $username, 'reason' => $result['message']], 'warning', 'user');
+            }
+        }
+    }
+    
+    elseif ($action === 'update_user') {
+        $userId = $_POST['user_id'] ?? '';
+        $userData = [
+            'username' => sanitizeInput($_POST['username'] ?? ''),
+            'email' => sanitizeInput($_POST['email'] ?? ''),
+            'full_name' => sanitizeInput($_POST['full_name'] ?? ''),
+            'role' => $_POST['role'] ?? 'viewer'
+        ];
+        
+        $result = updateUser($userId, $userData);
+        $message = $result['message'];
+        $messageType = $result['success'] ? 'success' : 'error';
+        if ($result['success']) {
+            auditLog('user_updated', ['user_id' => $userId, 'updated_fields' => array_keys($userData)], 'info', 'user');
+        }
+    }
+    
+    elseif ($action === 'delete_user') {
+        $userId = $_POST['user_id'] ?? '';
+        $result = deleteUser($userId);
+        $message = $result['message'];
+        $messageType = $result['success'] ? 'success' : 'error';
+        if ($result['success']) {
+            auditLog('user_deleted', ['user_id' => $userId], 'warning', 'user');
+        }
+    }
+    
+    elseif ($action === 'activate_user') {
+        $userId = $_POST['user_id'] ?? '';
+        $result = activateUser($userId);
+        $message = $result['message'];
+        $messageType = $result['success'] ? 'success' : 'error';
+        if ($result['success']) {
+            auditLog('user_activated', ['user_id' => $userId], 'info', 'user');
+        }
+    }
+    
+    elseif ($action === 'deactivate_user') {
+        $userId = $_POST['user_id'] ?? '';
+        $result = deactivateUser($userId);
+        $message = $result['message'];
+        $messageType = $result['success'] ? 'success' : 'error';
+        if ($result['success']) {
+            auditLog('user_deactivated', ['user_id' => $userId], 'warning', 'user');
+        }
+    }
+    
+    elseif ($action === 'reset_user_password') {
+        $userId = $_POST['user_id'] ?? '';
+        $newPassword = $_POST['new_password'] ?? '';
+        
+        $result = adminResetPassword($userId, $newPassword);
+        $message = $result['message'];
+        $messageType = $result['success'] ? 'success' : 'error';
+        
+        if ($result['success']) {
+            auditLog('admin_password_reset', ['user_id' => $userId], 'warning', 'security');
+        }
+    }
+    
+    // Handle Audit Log Actions
+    elseif ($action === 'export_audit_log') {
+        $filters = [];
+        if (!empty($_POST['filter_action'])) $filters['action'] = $_POST['filter_action'];
+        if (!empty($_POST['filter_user'])) $filters['user'] = $_POST['filter_user'];
+        if (!empty($_POST['filter_category'])) $filters['category'] = $_POST['filter_category'];
+        if (!empty($_POST['filter_severity'])) $filters['severity'] = $_POST['filter_severity'];
+        if (!empty($_POST['filter_date_from'])) $filters['date_from'] = $_POST['filter_date_from'];
+        if (!empty($_POST['filter_date_to'])) $filters['date_to'] = $_POST['filter_date_to'];
+        
+        $logs = getAuditLogs($filters, 10000);
+        
+        auditLog('audit_log_exported', ['filters' => $filters, 'count' => count($logs)], 'info', 'security');
+        
+        header('Content-Type: application/json; charset=utf-8');
+        header('Content-Disposition: attachment; filename="audit_log_' . date('Ymd_His') . '.json"');
+        echo json_encode($logs, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    
+    elseif ($action === 'clear_old_audit_logs') {
+        $daysToKeep = max(1, min(365, (int)($_POST['days_to_keep'] ?? 90)));
+        $deleted = clearOldAuditLogs($daysToKeep);
+        $message = "✅ Cleared $deleted old audit log entries";
+        $messageType = 'success';
+        auditLog('audit_logs_cleared', ['days_kept' => $daysToKeep, 'deleted_count' => $deleted], 'warning', 'system');
+    }
+    
+    // Catch-all: If we processed a POST action but didn't redirect yet, redirect now to prevent form resubmission
+    if ($action && isset($message)) {
+        $_SESSION['message'] = $message;
+        $_SESSION['messageType'] = $messageType ?? 'info';
+        if (ob_get_length()) ob_clean();
+        $redirectUrl = $_SERVER['PHP_SELF'];
+        if (isset($collectionName) && $collectionName) {
+            $redirectUrl .= '?collection=' . urlencode($collectionName);
+        }
+        header('Location: ' . $redirectUrl);
+        exit;
     }
 }
 
@@ -640,6 +843,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $baseFile = 'mongo_export_' . $collectionName . '_' . date('Ymd_His');
 
             if ($action === 'export_query_json') {
+                auditLog('query_exported_json', ['count' => count($queryResults), 'collection' => $collectionName], 'info', 'data');
                 header('Content-Type: application/json; charset=utf-8');
                 header('Content-Disposition: attachment; filename="' . $baseFile . '.json"');
                 echo json_encode($queryResults, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
@@ -647,6 +851,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // CSV export
+            auditLog('query_exported_csv', ['count' => count($queryResults), 'collection' => $collectionName], 'info', 'data');
             header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename="' . $baseFile . '.csv"');
 
@@ -787,30 +992,89 @@ include 'templates/header.php';
 
     <!-- Tab Navigation -->
     <div class="tabs">
+        <!-- Dashboard - All roles -->
+        <?php if (userHasPermission('view_data')): ?>
         <button type="button" class="tab-btn" data-tab="dashboard"
             onclick="switchTab('dashboard', this); return false;">🎯 Dashboard</button>
+        <?php endif; ?>
+        
+        <!-- Browse - All roles -->
+        <?php if (userHasPermission('view_data')): ?>
         <button type="button" class="tab-btn" data-tab="browse" onclick="switchTab('browse', this); return false;">📋
             Browse</button>
+        <?php endif; ?>
+        
+        <!-- Query Builder - All roles -->
+        <?php if (userHasPermission('view_data')): ?>
         <button type="button" class="tab-btn" data-tab="query" onclick="switchTab('query', this); return false;">🔍
             Query Builder</button>
+        <?php endif; ?>
+        
+        <!-- Add Document - Requires create_data -->
+        <?php if (userHasPermission('create_data')): ?>
         <button type="button" class="tab-btn" data-tab="add" onclick="switchTab('add', this); return false;">➕ Add
             Document</button>
+        <?php endif; ?>
+        
+        <!-- Bulk Operations - Requires bulk_operations -->
+        <?php if (userHasPermission('bulk_operations')): ?>
         <button type="button" class="tab-btn" data-tab="bulk" onclick="switchTab('bulk', this); return false;">📦 Bulk
             Operations</button>
+        <?php endif; ?>
+        
+        <!-- Tools - Requires edit_data or manage_collections -->
+        <?php if (userHasPermission('edit_data') || userHasPermission('manage_collections')): ?>
         <button type="button" class="tab-btn" data-tab="tools" onclick="switchTab('tools', this); return false;">🛠️
             Tools</button>
+        <?php endif; ?>
+        
+        <!-- Advanced - Requires manage_collections -->
+        <?php if (userHasPermission('manage_collections')): ?>
         <button type="button" class="tab-btn" data-tab="advanced"
             onclick="switchTab('advanced', this); return false;">🔬 Advanced</button>
+        <?php endif; ?>
+        
+        <!-- Performance - Requires manage_collections or view_settings -->
+        <?php if (userHasPermission('manage_collections') || userHasRole('admin')): ?>
         <button type="button" class="tab-btn" data-tab="performance"
             onclick="switchTab('performance', this); return false;">⚡ Performance</button>
+        <?php endif; ?>
+        
+        <!-- Analytics - Requires view_analytics -->
+        <?php if (userHasPermission('view_analytics')): ?>
         <button type="button" class="tab-btn" data-tab="stats" onclick="switchTab('stats', this); return false;">📊
             Analytics</button>
+        <?php endif; ?>
+        
+        <!-- Schema - Requires manage_collections or view_data -->
+        <?php if (userHasPermission('manage_collections') || userHasPermission('view_data')): ?>
         <button type="button" class="tab-btn" data-tab="schema" onclick="switchTab('schema', this); return false;">📐
             Schema</button>
+        <?php endif; ?>
+        
+        <!-- Security - Requires view_security or manage_security -->
+        <?php if (userHasPermission('view_security') || userHasPermission('manage_security')): ?>
         <button type="button" class="tab-btn" data-tab="security"
             onclick="switchTab('security', this); return false;">🔒 Security</button>
+        <?php endif; ?>
+        
+        <!-- Audit Log - Requires view_logs (admin only) -->
+        <?php if (userHasPermission('view_logs')): ?>
+        <button type="button" class="tab-btn" data-tab="audit" onclick="switchTab('audit', this); return false;">📜
+            Audit Log</button>
+        <?php endif; ?>
+        
+        <!-- User Management - Requires manage_users (admin only) -->
+        <?php if (userHasPermission('manage_users')): ?>
+        <button type="button" class="tab-btn" data-tab="users" onclick="switchTab('users', this); return false;">👥
+            Users</button>
+        <?php endif; ?>
+        
+        <!-- Settings - All roles can view -->
+        <?php if (userHasPermission('view_settings')): ?>
         <button type="button" class="tab-btn" data-tab="settings"
             onclick="switchTab('settings', this); return false;">⚙️ Settings</button>
+        <?php endif; ?>
     </div>
 
     <!-- Dashboard Tab -->
@@ -845,6 +1109,16 @@ include 'templates/header.php';
 
 <!-- Security & Backup Tab -->
 <?php require __DIR__ . '/includes/tabs/security.php'; ?>
+
+<!-- Audit Log Tab -->
+<?php if (userHasRole('admin')): ?>
+    <?php require __DIR__ . '/includes/tabs/audit.php'; ?>
+<?php endif; ?>
+
+<!-- User Management Tab -->
+<?php if (userHasRole('admin')): ?>
+    <?php require __DIR__ . '/includes/tabs/users.php'; ?>
+<?php endif; ?>
 
     <!-- Settings Tab -->
     <?php require __DIR__ . '/includes/tabs/settings.php'; ?>
@@ -1467,7 +1741,7 @@ include 'templates/header.php';
                         <input type="hidden" name="csrf_token" value="${csrfToken}">
                         <input type="hidden" name="doc_id" value="${docId}">
                         <input type="hidden" name="collection" value="${collectionName}">
-                        <textarea name="doc_data" id="editDocData" required style="width: 100%; min-height: 400px; padding: 15px; border: 2px solid #dee2e6; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; background: #1e1e1e; color: #d4d4d4;">${escapeHtml(formatted)}</textarea>
+                        <textarea name="json_data" id="editDocData" required style="width: 100%; min-height: 400px; padding: 15px; border: 2px solid #dee2e6; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; background: #1e1e1e; color: #d4d4d4;">${escapeHtml(formatted)}</textarea>
                         <div style="margin-top: 20px; display: flex; gap: 10px;">
                             <button type="submit" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">💾 Save Changes</button>
                             <button type="button" onclick="validateJSON()" style="background: #17a2b8; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 14px;">✓ Validate JSON</button>

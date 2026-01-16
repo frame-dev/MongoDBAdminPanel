@@ -27,6 +27,12 @@ if (file_exists($requested_file) && is_file($requested_file)) {
     if (strpos(realpath($requested_file), realpath(__DIR__)) === 0) {
         $extension = strtolower(pathinfo($requested_file, PATHINFO_EXTENSION));
         
+        // PHP files should be executed, not served as static files
+        if ($extension === 'php') {
+            require $requested_file;
+            return true;
+        }
+        
         $mimeTypes = [
             'css' => 'text/css; charset=utf-8',
             'js' => 'application/javascript; charset=utf-8',

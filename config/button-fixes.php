@@ -11,6 +11,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Add Document
     if ($action === 'add') {
+        if (!userHasPermission('create_data')) {
+            $message = '❌ Permission denied: You do not have permission to create documents';
+            $messageType = 'error';
+            auditLog('permission_denied', ['action' => 'add_document'], 'warning', 'security');
+        } else {
         try {
             $jsonData = $_POST['json_data'] ?? '{}';
             if (!validateJSON($jsonData)) {
@@ -20,33 +25,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $collection->insertOne($doc);
             $message = '✅ Document added successfully';
             $messageType = 'success';
-            auditLog('document_added', ['fields' => count($doc)]);
+            auditLog('document_added', ['fields' => count($doc)], 'info', 'data');
         } catch (Exception $e) {
             $message = '❌ Error adding document: ' . $e->getMessage();
             $messageType = 'error';
+        }
         }
     }
     
     // Update Document
     elseif ($action === 'update') {
+        if (!userHasPermission('edit_data')) {
+            $message = '❌ Permission denied: You do not have permission to edit documents';
+            $messageType = 'error';
+            auditLog('permission_denied', ['action' => 'update_document'], 'warning', 'security');
+        } else {
         try {
             $docId = $_POST['doc_id'] ?? '';
             $jsonData = $_POST['json_data'] ?? '{}';
             
-            if (!validateJSON($jsonData)) {
-                throw new Exception('Invalid JSON format');
+            // First decode to check validity
+            $updateData = json_decode($jsonData, true);
+            
+            if ($updateData === null || json_last_error() !== JSON_ERROR_NONE) {
+                throw new Exception('Invalid JSON format: ' . json_last_error_msg());
             }
             
-            $updateData = json_decode($jsonData, true);
+            if (!is_array($updateData)) {
+                throw new Exception('JSON must be an object, not a ' . gettype($updateData));
+            }
+            
+            // Log what fields we received
+            $originalFields = array_keys($updateData);
+            error_log('Update document - Original fields: ' . implode(', ', $originalFields));
+            
+            // Now validate with security check
+            if (!validateJSON($jsonData)) {
+                throw new Exception('JSON contains potentially dangerous content');
+            }
+            
+            // Remove _id from update data (can't update _id field)
+            unset($updateData['_id']);
+            
+            // Log what's left after removing _id
+            $remainingFields = array_keys($updateData);
+            error_log('Update document - After removing _id: ' . implode(', ', $remainingFields));
+            
+            // Check if the data is empty after removing _id
+            if (empty($updateData)) {
+                throw new Exception('No fields to update. The form only sent the _id field. Please check that all document fields are included in the JSON.');
+            }
+            
+            // Check if it's a sequential array (has only numeric sequential keys)
+            $keys = array_keys($updateData);
+            if (!empty($keys) && $keys === range(0, count($keys) - 1)) {
+                throw new Exception('Cannot update document with array. Document must be an object with field names like {"field": "value"}.');
+            }
+            
             $result = $collection->updateOne(
-                ['_id' => new ObjectId($docId)],
+                ['_id' => new \MongoDB\BSON\ObjectId($docId)],
                 ['$set' => $updateData]
             );
             
             if ($result->getModifiedCount() > 0) {
                 $message = '✅ Document updated successfully';
                 $messageType = 'success';
-                auditLog('document_updated', ['doc_id' => $docId]);
+                auditLog('document_updated', ['doc_id' => $docId, 'fields' => count($updateData)], 'info', 'data');
             } else {
                 $message = '⚠️ No changes made to document';
                 $messageType = 'warning';
@@ -54,19 +98,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Exception $e) {
             $message = '❌ Error updating document: ' . $e->getMessage();
             $messageType = 'error';
+            error_log('Update document error: ' . $e->getMessage());
+        }
         }
     }
     
     // Delete Document
     elseif ($action === 'delete') {
+        if (!userHasPermission('delete_data')) {
+            $message = '❌ Permission denied: You do not have permission to delete documents';
+            $messageType = 'error';
+            auditLog('permission_denied', ['action' => 'delete_document'], 'warning', 'security');
+        } else {
         try {
             $docId = $_POST['doc_id'] ?? '';
-            $result = $collection->deleteOne(['_id' => new ObjectId($docId)]);
+            $result = $collection->deleteOne(['_id' => new \MongoDB\BSON\ObjectId($docId)]);
             
             if ($result->getDeletedCount() > 0) {
                 $message = '✅ Document deleted successfully';
                 $messageType = 'success';
-                auditLog('document_deleted', ['doc_id' => $docId]);
+                auditLog('document_deleted', ['doc_id' => $docId], 'warning', 'data');
             } else {
                 $message = '⚠️ Document not found';
                 $messageType = 'warning';
@@ -75,13 +126,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = '❌ Error deleting document: ' . $e->getMessage();
             $messageType = 'error';
         }
+        }
     }
     
     // Duplicate Document
     elseif ($action === 'duplicate') {
         try {
             $docId = $_POST['doc_id'] ?? '';
-            $original = $collection->findOne(['_id' => new ObjectId($docId)]);
+            $original = $collection->findOne(['_id' => new \MongoDB\BSON\ObjectId($docId)]);
             
             if (!$original) {
                 throw new Exception('Document not found');
@@ -93,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $collection->insertOne($duplicate);
             $message = '✅ Document duplicated successfully';
             $messageType = 'success';
-            auditLog('document_duplicated', ['original_id' => $docId]);
+            auditLog('document_duplicated', ['original_id' => $docId], 'info', 'data');
         } catch (Exception $e) {
             $message = '❌ Error: ' . $e->getMessage();
             $messageType = 'error';
@@ -110,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             foreach ($docIds as $docId) {
                 try {
-                    $result = $collection->deleteOne(['_id' => new ObjectId(trim($docId))]);
+                    $result = $collection->deleteOne(['_id' => new \MongoDB\BSON\ObjectId(trim($docId))]);
                     $deleted += $result->getDeletedCount();
                 } catch (Exception $e) {
                     continue;
@@ -142,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             foreach ($docIds as $docId) {
                 try {
                     $result = $collection->updateOne(
-                        ['_id' => new ObjectId(trim($docId))],
+                        ['_id' => new \MongoDB\BSON\ObjectId(trim($docId))],
                         ['$set' => $updateData]
                     );
                     $updated += $result->getModifiedCount();
@@ -246,6 +298,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Create Collection
     elseif ($action === 'create_collection') {
+        if (!userHasPermission('manage_collections')) {
+            $message = '❌ Permission denied: You do not have permission to manage collections';
+            $messageType = 'error';
+            auditLog('permission_denied', ['action' => 'create_collection'], 'critical', 'security');
+        } else {
         try {
             $collectionName = sanitizeInput($_POST['collection_name'] ?? '');
             
@@ -268,10 +325,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = '❌ Error: ' . $e->getMessage();
             $messageType = 'error';
         }
+        }
     }
     
     // Drop Collection
     elseif ($action === 'drop_collection') {
+        if (!userHasPermission('manage_collections')) {
+            $message = '❌ Permission denied: You do not have permission to drop collections';
+            $messageType = 'error';
+            auditLog('permission_denied', ['action' => 'drop_collection'], 'critical', 'security');
+        } else {
         try {
             $collectionName = sanitizeInput($_POST['collection_to_drop'] ?? '');
             $confirmName = sanitizeInput($_POST['confirm_collection_name'] ?? '');
@@ -290,6 +353,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Exception $e) {
             $message = '❌ Error: ' . $e->getMessage();
             $messageType = 'error';
+        }
         }
     }
     
@@ -421,16 +485,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Delete All Documents
     elseif ($action === 'delete_all') {
+        if (!userHasPermission('delete_data') || !userHasPermission('bulk_operations')) {
+            $message = '❌ Permission denied: You do not have permission to delete all documents';
+            $messageType = 'error';
+            auditLog('permission_denied', ['action' => 'delete_all_documents'], 'critical', 'security');
+        } else {
         try {
             $result = $collection->deleteMany([]);
             $message = "✅ Deleted {$result->getDeletedCount()} documents";
             $messageType = 'success';
-            auditLog('delete_all_documents', ['count' => $result->getDeletedCount()]);
+            auditLog('delete_all_documents', ['count' => $result->getDeletedCount()], 'critical', 'data');
         } catch (Exception $e) {
             $message = '❌ Error: ' . $e->getMessage();
             $messageType = 'error';
         }
+        }
     }
+
     
     // Bulk Update by Query
     elseif ($action === 'bulk_update_query') {
@@ -467,6 +538,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = '❌ Error: ' . $e->getMessage();
             $messageType = 'error';
         }
+    }
+    // Catch-all: If we processed a POST action but didn't redirect yet, redirect now to prevent form resubmission
+    if (isset($message)) {
+        $_SESSION['message'] = $message;
+        $_SESSION['messageType'] = $messageType ?? 'info';
+        if (ob_get_length()) ob_clean();
+        if (isset($collectionName) && $collectionName) {
+            header('Location: ' . $_SERVER['PHP_SELF'] . '?collection=' . urlencode($collectionName));
+        } else {
+            header('Location: ' . $_SERVER['PHP_SELF']);
+        }
+        exit;
     }
 }
 ?>

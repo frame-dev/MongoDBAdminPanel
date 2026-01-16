@@ -1,6 +1,13 @@
 <div id="security" class="tab-content">
     <h2 style="margin-bottom: 20px;">🔒 Security & Backup</h2>
 
+    <?php if (!userHasPermission('view_security') && !userHasPermission('manage_security')): ?>
+        <div class="alert alert-warning">
+            <span class="alert-icon">⚠️</span>
+            <span class="alert-text">You don't have permission to access security settings. Contact an administrator.</span>
+        </div>
+    <?php else: ?>
+
     <div
         style="background: linear-gradient(135deg, #dc354515 0%, #ff000015 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #dc3545;">
         <p style="color: #721c24; line-height: 1.8;">
@@ -180,9 +187,9 @@
                                             <?php echo htmlspecialchars($log->action); ?>
                                         </span>
                                     </td>
-                                    <td style="padding: 12px; font-size: 12px;"><?php echo htmlspecialchars($log->user); ?></td>
+                                    <td style="padding: 12px; font-size: 12px;"><?php echo htmlspecialchars($log->user->username ?? 'N/A'); ?></td>
                                     <td style="padding: 12px; font-size: 12px; font-family: monospace;">
-                                        <?php echo htmlspecialchars($log->ip); ?>
+                                        <?php echo htmlspecialchars($log->request->ip ?? 'N/A'); ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -273,6 +280,7 @@
             </div>
         <?php } ?>
     </div>
+    <?php endif; ?>
 </div>
 
     <!-- Settings Tab -->
