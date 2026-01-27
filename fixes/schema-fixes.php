@@ -21,9 +21,10 @@ function truncateSampleValue($value, $maxLength = 50) {
     return $sampleValue;
 }
 
-function renderSchemaField($fieldName, $fieldInfo) {
+function renderSchemaField($fieldName, $fieldInfo, $sampleSize = 100) {
     $types = implode(', ', $fieldInfo['types']);
-    $frequency = round(($fieldInfo['count'] / 100) * 100, 1);
+    $sampleSize = max(1, (int) $sampleSize);
+    $frequency = round(($fieldInfo['count'] / $sampleSize) * 100, 1);
     $samples = implode(', ', array_map('truncateSampleValue', $fieldInfo['samples']));
     
     $html = '<div style="display: grid; grid-template-columns: 200px 1fr 150px; gap: 20px; align-items: start;">';

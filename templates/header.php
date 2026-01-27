@@ -387,11 +387,16 @@ require_once 'config/security.php';
         
         // Initialize theme on page load
         (function() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
+            const themeSetting = <?php echo json_encode(getSetting('theme', 'light')); ?>;
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const systemTheme = prefersDark ? 'dark' : 'light';
+            const storedTheme = localStorage.getItem('theme');
+            const initialTheme = storedTheme || (themeSetting === 'auto' ? systemTheme : themeSetting);
+            document.documentElement.setAttribute('data-theme', initialTheme);
         })();
         
         document.addEventListener('DOMContentLoaded', function() {
+            const syntaxHighlighting = <?php echo getSetting('syntax_highlighting', true) ? 'true' : 'false'; ?>;
             // Set theme toggle button icon
             const themeBtn = document.getElementById('themeToggle');
             const currentTheme = document.documentElement.getAttribute('data-theme');
@@ -427,10 +432,12 @@ require_once 'config/security.php';
                 }
             }
             
-            document.querySelectorAll('pre code').forEach((block) => {
-                delete block.dataset.highlighted;
-                hljs.highlightElement(block);
-            });
+            if (syntaxHighlighting) {
+                document.querySelectorAll('pre code').forEach((block) => {
+                    delete block.dataset.highlighted;
+                    hljs.highlightElement(block);
+                });
+            }
             
             // Add smooth scroll behavior
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {

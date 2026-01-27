@@ -18,7 +18,8 @@
  * Initialize authentication system
  * Sets up MongoDB users collection if needed
  */
-function initializeAuth() {
+function initializeAuth(): bool
+{
     global $client, $database;
     
     try {
@@ -54,7 +55,8 @@ function initializeAuth() {
  * @param string $password Plain text password
  * @return string Hashed password
  */
-function hashPassword($password) {
+function hashPassword(string $password): string
+{
     // Use PHP's password_hash with BCRYPT algorithm
     // Cost parameter set to 12 for strong security
     return password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
@@ -67,7 +69,8 @@ function hashPassword($password) {
  * @param string $hash Password hash
  * @return bool True if password matches hash
  */
-function verifyPassword($password, $hash) {
+function verifyPassword(string $password, string $hash): bool
+{
     return password_verify($password, $hash);
 }
 
@@ -81,7 +84,8 @@ function verifyPassword($password, $hash) {
  * @param string $role User role ('admin', 'editor', 'viewer')
  * @return array ['success' => bool, 'message' => string, 'user_id' => string|null]
  */
-function registerUser($username, $email, $password, $fullName = '', $role = 'viewer') {
+function registerUser(string $username, string $email, string $password, string $fullName = '', string $role = 'viewer'): array
+{
     global $database;
     
     // Check if database is connected
@@ -165,7 +169,8 @@ function registerUser($username, $email, $password, $fullName = '', $role = 'vie
  * @param string $password Password
  * @return array ['success' => bool, 'message' => string, 'user' => array|null]
  */
-function authenticateUser($username, $password) {
+function authenticateUser(string $username, string $password): array
+{
     global $database;
     
     if (empty($username) || empty($password)) {
@@ -264,7 +269,7 @@ function authenticateUser($username, $password) {
  * 
  * @param array $user User data from authentication
  */
-function createUserSession($user) {
+function createUserSession(array $user) {
     $_SESSION['user'] = [
         'id' => $user['id'],
         'username' => $user['username'],
@@ -283,7 +288,8 @@ function createUserSession($user) {
  * 
  * @return bool True if user is authenticated
  */
-function isUserLoggedIn() {
+function isUserLoggedIn(): bool
+{
     return isset($_SESSION['user']) && !empty($_SESSION['user']['username']);
 }
 
@@ -292,7 +298,8 @@ function isUserLoggedIn() {
  * 
  * @return array|null User data if logged in, null otherwise
  */
-function getCurrentUser() {
+function getCurrentUser(): ?array
+{
     if (isUserLoggedIn()) {
         return $_SESSION['user'];
     }
@@ -304,7 +311,8 @@ function getCurrentUser() {
  * 
  * @return array Role definitions
  */
-function getAllRoles() {
+function getAllRoles(): array
+{
     return [
         'admin' => [
             'name' => 'Administrator',
@@ -450,7 +458,8 @@ function getAllRoles() {
  * @param string $roleName Role name
  * @return array|null Role details or null if not found
  */
-function getRoleDetails($roleName) {
+function getRoleDetails(string $roleName): ?array
+{
     $roles = getAllRoles();
     return $roles[$roleName] ?? null;
 }
@@ -461,7 +470,8 @@ function getRoleDetails($roleName) {
  * @param string $role Role to check ('admin', 'editor', 'viewer')
  * @return bool True if user has role
  */
-function userHasRole($role) {
+function userHasRole(string $role): bool
+{
     $user = getCurrentUser();
     if (!$user) {
         return false;
@@ -486,7 +496,8 @@ function userHasRole($role) {
  * @param string $action Action name
  * @return bool True if user has permission
  */
-function userHasPermission($action) {
+function userHasPermission(string $action): bool
+{
     $user = getCurrentUser();
     if (!$user) {
         return false;
@@ -526,7 +537,8 @@ function logoutUser() {
  * @param string $newPassword New password
  * @return array ['success' => bool, 'message' => string]
  */
-function changeUserPassword($userId, $oldPassword, $newPassword) {
+function changeUserPassword(string $userId, string $oldPassword, string $newPassword): array
+{
     global $database;
     
     if (strlen($newPassword) < 8) {
@@ -567,7 +579,8 @@ function changeUserPassword($userId, $oldPassword, $newPassword) {
  * 
  * @return array List of users
  */
-function getAllUsers() {
+function getAllUsers(): array
+{
     global $database;
     
     if (!userHasRole('admin')) {
@@ -610,7 +623,8 @@ function getAllUsers() {
  * @param string $newRole New role
  * @return array ['success' => bool, 'message' => string]
  */
-function updateUserRole($userId, $newRole) {
+function updateUserRole(string $userId, string $newRole): array
+{
     global $database;
     
     if (!userHasRole('admin')) {
@@ -725,7 +739,7 @@ function deleteUser($userId) {
         return ['success' => false, 'message' => 'Database connection required'];
     }
     
-    // Prevent deleting own account
+    // Prevent deleting an own account
     $currentUser = getCurrentUser();
     if ((string)$currentUser['_id'] === $userId) {
         return ['success' => false, 'message' => 'Cannot delete your own account'];
@@ -794,13 +808,20 @@ function updateUser($userId, $data) {
         if (isset($data['username'])) $updateData['username'] = $data['username'];
         if (isset($data['email'])) $updateData['email'] = $data['email'];
         if (isset($data['full_name'])) $updateData['full_name'] = $data['full_name'];
-        $validRoles = ['admin', 'editor', 'viewer', 'developer', 'analyst'];
-        if (isset($data['role']) && in_array($data['role'], $validRoles)) {
-            $updateData['role'] = $data['role'];
+
+        if (isset($data['role'])) {
+            $validRoles = ['admin', 'editor', 'viewer', 'developer', 'analyst'];
+            if (!in_array($data['role'], $validRoles)) {
+                return ['success' => false, 'message' => 'Invalid role'];
+            }
+            $roleResult = updateUserRole($userId, $data['role']);
+            if (!$roleResult['success']) {
+                return $roleResult;
+            }
         }
         
         if (empty($updateData)) {
-            return ['success' => false, 'message' => 'No valid data to update'];
+            return ['success' => true, 'message' => 'User updated successfully'];
         }
         
         $usersCollection->updateOne(

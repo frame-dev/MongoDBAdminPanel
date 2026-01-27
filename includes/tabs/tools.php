@@ -27,15 +27,10 @@
                     <form method="POST" onsubmit="return confirm('Are you ABSOLUTELY sure? This cannot be undone!')">
                         <input type="hidden" name="action" value="drop_collection">
                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                        <select name="collection_to_drop" required
-                            style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
-                            <option value="">Select collection...</option>
-                            <?php foreach ($allCollectionNames as $cname): ?>
-                                <option value="<?php echo htmlspecialchars($cname); ?>">
-                                    <?php echo htmlspecialchars($cname); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                    <select name="collection_to_drop" required
+                        style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
+                        <?php echo generateCollectionOptions($allCollectionNames); ?>
+                    </select>
                         <input type="text" name="confirm_collection_name" placeholder="Type name to confirm" required
                             style="width: 100%; padding: 8px; border: 2px solid #dc3545; border-radius: 4px; margin-bottom: 8px;">
                         <button type="submit" class="btn"

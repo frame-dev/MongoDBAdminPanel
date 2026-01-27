@@ -367,9 +367,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Both collection names required');
             }
             
-            $database->admin()->command([
-                'renameCollection' => "$database.$oldName",
-                'to' => "$database.$newName"
+            $databaseName = $database->getDatabaseName();
+            $adminDatabase = $client->selectDatabase('admin');
+            $adminDatabase->command([
+                'renameCollection' => "$databaseName.$oldName",
+                'to' => "$databaseName.$newName"
             ]);
             
             $message = "✅ Collection renamed to '$newName'";

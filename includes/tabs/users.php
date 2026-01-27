@@ -6,6 +6,30 @@
             <p style="margin: 8px 0 0 0; color: var(--text-secondary); font-size: 14px;">Manage user accounts, roles, and permissions</p>
         </div>
         <div class="card-body">
+            <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <h3 style="margin: 0 0 10px 0;">🔒 Change Your Password</h3>
+                <form method="POST" onsubmit="return validateChangePasswordForm(this)">
+                    <input type="hidden" name="action" value="change_password">
+                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label>Current Password <span style="color: #dc3545;">*</span></label>
+                            <input type="password" name="old_password" required minlength="8" class="form-control" placeholder="Current password">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label>New Password <span style="color: #dc3545;">*</span></label>
+                            <input type="password" name="new_password" required minlength="8" class="form-control" placeholder="New password">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label>Confirm New Password <span style="color: #dc3545;">*</span></label>
+                            <input type="password" name="new_password_confirm" required minlength="8" class="form-control" placeholder="Confirm new password">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn" style="margin-top: 12px; background: #667eea; color: white;">
+                        🔑 Update Password
+                    </button>
+                </form>
+            </div>
             <?php if (!userHasRole('admin')): ?>
                 <div class="alert alert-warning">
                     <span class="alert-icon">⚠️</span>
@@ -445,6 +469,23 @@ function validateResetPasswordForm(form) {
     }
     
     return confirm('Are you sure you want to reset this user\'s password?');
+}
+
+function validateChangePasswordForm(form) {
+    const password = form.querySelector('input[name="new_password"]').value;
+    const passwordConfirm = form.querySelector('input[name="new_password_confirm"]').value;
+    
+    if (password !== passwordConfirm) {
+        alert('Passwords do not match!');
+        return false;
+    }
+    
+    if (password.length < 8) {
+        alert('Password must be at least 8 characters!');
+        return false;
+    }
+    
+    return true;
 }
 
 // Toggle User Status

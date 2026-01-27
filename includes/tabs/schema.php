@@ -11,7 +11,9 @@
 
     <?php
     // Analyze schema from sample documents
-    $sampleSize = min(100, $documentCount);
+    $sampleSizeSetting = (int) getSetting('schema_sample_size', 100);
+    $sampleSizeSetting = max(10, min(500, $sampleSizeSetting));
+    $sampleSize = min($sampleSizeSetting, $documentCount);
     $sampleDocs = $collection->find([], ['limit' => $sampleSize])->toArray();
 
     $schemaAnalysis = [];
@@ -76,49 +78,7 @@
                 <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 20px; border-radius: 10px; border-left: 4px solid #667eea; transition: all 0.3s;"
                     onmouseover="this.style.transform='translateX(5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'"
                     onmouseout="this.style.transform='translateX(0)'; this.style.boxShadow='none'">
-                    <div style="display: grid; grid-template-columns: 200px 1fr 150px; gap: 20px; align-items: start;">
-                        <div>
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                <span style="font-size: 20px;">📌</span>
-                                <strong
-                                    style="color: #333; font-size: 15px;"><?php echo htmlspecialchars($fieldName); ?></strong>
-                            </div>
-                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                <?php foreach ($fieldInfo['types'] as $type): ?>
-                                    <span
-                                        style="background: #667eea; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">
-                                        <?php echo htmlspecialchars($type); ?>
-                                    </span>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-
-                        <div>
-                            <p style="color: #666; font-size: 13px; margin-bottom: 8px;"><strong>Sample Values:</strong>
-                            </p>
-                            <div style="display: flex; flex-direction: column; gap: 6px;">
-                                <?php foreach ($fieldInfo['samples'] as $sample): ?>
-                                    <code
-                                        style="background: white; padding: 6px 10px; border-radius: 4px; font-size: 12px; border: 1px solid #dee2e6; display: block; overflow-x: auto;">
-                                                                                                                <?php echo htmlspecialchars($sample); ?>
-                                                                                                            </code>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-
-                        <div style="text-align: center;">
-                            <p style="color: #666; font-size: 12px; margin-bottom: 6px;">Frequency</p>
-                            <div
-                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px; border-radius: 8px;">
-                                <div style="font-size: 24px; font-weight: bold;">
-                                    <?php echo round(($fieldInfo['count'] / $sampleSize) * 100); ?>%
-                                </div>
-                                <div style="font-size: 11px; opacity: 0.9;">
-                                    <?php echo $fieldInfo['count']; ?> / <?php echo $sampleSize; ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <?php echo renderSchemaField($fieldName, $fieldInfo, $sampleSize); ?>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -180,17 +140,9 @@
                     $indexKeys = isset($index['key']) ? $index['key'] : [];
                     echo '<div style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); padding: 15px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #667eea;">';
                     echo '<p style="font-weight: 600; margin-bottom: 8px; color: #333; font-size: 15px;">📌 ' . htmlspecialchars($indexName) . '</p>';
-                    if (!empty($indexKeys)) {
-                        echo '<div style="background: white; padding: 10px; border-radius: 4px; margin-top: 8px;">';
-                        echo '<code style="font-size: 13px; color: #666;">';
-                        $keyStr = [];
-                        foreach ($indexKeys as $field => $direction) {
-                            $keyStr[] = htmlspecialchars($field) . ': ' . ($direction == 1 ? '↑' : '↓');
-                        }
-                        echo implode(', ', $keyStr);
-                        echo '</code>';
-                        echo '</div>';
-                    }
+                    echo '<div style="background: white; padding: 10px; border-radius: 4px; margin-top: 8px;">';
+                    echo renderIndexKeys($indexKeys);
+                    echo '</div>';
                     echo '</div>';
                 }
                 if (!$hasIndexes) {

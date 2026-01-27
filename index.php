@@ -22,6 +22,9 @@ use MongoDB\BSON\UTCDateTime;
 
 // Load security functions
 require_once 'config/security.php';
+$memoryLimitSetting = (int) getSetting('memory_limit', 256);
+$memoryLimitSetting = max(128, min(2048, $memoryLimitSetting));
+ini_set('memory_limit', $memoryLimitSetting . 'M');
 
 // Load authentication functions
 require_once 'config/auth.php';
@@ -31,6 +34,17 @@ require_once 'config/database.php';
 
 // Load backup and audit logging utilities (needed early for auditLog function)
 require_once 'includes/backup.php';
+
+// Load helper fixes used across tabs
+require_once 'fixes/query-operator-fixes.php';
+require_once 'fixes/value-type-fixes.php';
+require_once 'fixes/select-options-fixes.php';
+require_once 'fixes/pagination-fixes.php';
+require_once 'fixes/quick-filters-fixes.php';
+require_once 'fixes/document-row-fixes.php';
+require_once 'fixes/projection-fixes.php';
+require_once 'fixes/index-display-fixes.php';
+require_once 'fixes/schema-fixes.php';
 
 // Handle authentication requests (now that database is loaded)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -179,6 +193,12 @@ if ($database === null) {
     include 'templates/connection.php';
     include 'templates/footer.php';
     exit;
+}
+
+// Initialize auth collections when connected (once per session)
+if (!isset($_SESSION['auth_initialized'])) {
+    initializeAuth();
+    $_SESSION['auth_initialized'] = true;
 }
 
 // Check if user is authenticated (for non-auth actions)
@@ -398,6 +418,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['settings']['items_per_page'] = (int) ($_POST['items_per_page'] ?? 50);
         $_SESSION['settings']['date_format'] = sanitizeInput($_POST['date_format'] ?? 'Y-m-d H:i:s');
         $_SESSION['settings']['theme'] = sanitizeInput($_POST['theme'] ?? 'light');
+        $_SESSION['settings']['default_sort_field'] = sanitizeInput($_POST['default_sort_field'] ?? '_id');
+        $_SESSION['settings']['default_sort_order'] = ($_POST['default_sort_order'] ?? '-1') === '1' ? '1' : '-1';
+        $viewMode = $_POST['default_view_mode'] ?? 'table';
+        $_SESSION['settings']['default_view_mode'] = in_array($viewMode, ['table', 'grid'], true) ? $viewMode : 'table';
         $_SESSION['settings']['syntax_highlighting'] = isset($_POST['syntax_highlighting']);
         $_SESSION['settings']['pretty_print'] = isset($_POST['pretty_print']);
         $_SESSION['settings']['show_objectid_as_string'] = isset($_POST['show_objectid_as_string']);
@@ -417,12 +441,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['settings'] = $_SESSION['settings'] ?? [];
         $_SESSION['settings']['query_timeout'] = max(5, min(300, (int) ($_POST['query_timeout'] ?? 30)));
         $_SESSION['settings']['max_results'] = max(100, min(10000, (int) ($_POST['max_results'] ?? 1000)));
+        $_SESSION['settings']['query_default_limit'] = max(10, min(10000, (int) ($_POST['query_default_limit'] ?? 50)));
         $_SESSION['settings']['memory_limit'] = max(128, min(2048, (int) ($_POST['memory_limit'] ?? 256)));
         $_SESSION['settings']['cache_ttl'] = max(1, min(1440, (int) ($_POST['cache_ttl'] ?? 15)));
         $_SESSION['settings']['query_cache'] = isset($_POST['query_cache']);
         $_SESSION['settings']['auto_indexes'] = isset($_POST['auto_indexes']);
         $_SESSION['settings']['schema_cache'] = isset($_POST['schema_cache']);
         $_SESSION['settings']['lazy_load'] = isset($_POST['lazy_load']);
+        $_SESSION['settings']['schema_sample_size'] = max(10, min(500, (int) ($_POST['schema_sample_size'] ?? 100)));
         
         $message = '✅ Performance settings saved successfully';
         $messageType = 'success';
@@ -472,6 +498,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     elseif ($action === 'save_export_settings') {
         $_SESSION['settings'] = $_SESSION['settings'] ?? [];
         $_SESSION['settings']['default_export_format'] = sanitizeInput($_POST['default_export_format'] ?? 'json');
+        $_SESSION['settings']['export_filename_prefix'] = sanitizeInput($_POST['export_filename_prefix'] ?? 'export');
         $_SESSION['settings']['include_metadata'] = isset($_POST['include_metadata']);
         $_SESSION['settings']['compress_exports'] = isset($_POST['compress_exports']);
         $_SESSION['settings']['timestamp_exports'] = isset($_POST['timestamp_exports']);
@@ -519,21 +546,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!verifyCSRFToken($csrfToken)) {
             $message = '❌ CSRF token validation failed';
             $messageType = 'error';
-        } elseif ($_FILES['settings_file']['type'] !== 'application/json' && pathinfo($_FILES['settings_file']['name'], PATHINFO_EXTENSION) !== 'json') {
-            $message = '❌ Only JSON files are allowed';
-            $messageType = 'error';
         } else {
-            $fileContent = file_get_contents($_FILES['settings_file']['tmp_name']);
-            $importedSettings = json_decode($fileContent, true);
-            
-            if ($importedSettings === null) {
-                $message = '❌ Invalid JSON format in settings file';
+            try {
+                validateUpload($_FILES['settings_file'], ['application/json', 'text/plain']);
+                $fileContent = file_get_contents($_FILES['settings_file']['tmp_name']);
+                $importedSettings = json_decode($fileContent, true);
+                
+                if ($importedSettings === null) {
+                    $message = '❌ Invalid JSON format in settings file';
+                    $messageType = 'error';
+                } else {
+                    $_SESSION['settings'] = array_merge($_SESSION['settings'] ?? [], $importedSettings);
+                    $message = '✅ Settings imported successfully';
+                    $messageType = 'success';
+                    auditLog('settings_imported', ['settings_count' => count($importedSettings)], 'warning', 'system');
+                }
+            } catch (Exception $e) {
+                $message = '❌ ' . $e->getMessage();
                 $messageType = 'error';
-            } else {
-                $_SESSION['settings'] = array_merge($_SESSION['settings'] ?? [], $importedSettings);
-                $message = '✅ Settings imported successfully';
-                $messageType = 'success';
-                auditLog('settings_imported', ['settings_count' => count($importedSettings)], 'warning', 'system');
             }
         }
     }
@@ -552,12 +582,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'items_per_page' => 50,
             'date_format' => 'Y-m-d H:i:s',
             'theme' => 'light',
+            'default_sort_field' => '_id',
+            'default_sort_order' => '-1',
+            'default_view_mode' => 'table',
             'syntax_highlighting' => true,
             'pretty_print' => true,
+            'show_objectid_as_string' => false,
+            'collapsible_json' => false,
+            'zebra_stripes' => true,
+            'row_hover' => true,
+            'fixed_header' => false,
+            'compact_mode' => false,
             'query_timeout' => 30,
             'max_results' => 1000,
+            'query_default_limit' => 50,
+            'memory_limit' => 256,
+            'cache_ttl' => 15,
             'query_cache' => true,
-            'auto_indexes' => true
+            'auto_indexes' => true,
+            'schema_cache' => false,
+            'lazy_load' => false,
+            'schema_sample_size' => 100,
+            'editor_theme' => 'monokai',
+            'editor_font_size' => 14,
+            'line_numbers' => true,
+            'auto_format' => true,
+            'validate_on_type' => false,
+            'auto_refresh' => false,
+            'refresh_interval' => 30,
+            'confirm_deletions' => true,
+            'show_tooltips' => true,
+            'keyboard_shortcuts' => true,
+            'save_scroll_position' => false,
+            'show_success_messages' => true,
+            'show_error_messages' => true,
+            'show_warning_messages' => true,
+            'auto_dismiss_alerts' => true,
+            'alert_duration' => 5,
+            'enable_sounds' => false,
+            'desktop_notifications' => false,
+            'animation_effects' => true,
+            'loading_indicators' => true,
+            'progress_bars' => true,
+            'default_export_format' => 'json',
+            'export_filename_prefix' => 'export',
+            'include_metadata' => true,
+            'compress_exports' => false,
+            'timestamp_exports' => true,
+            'auto_backup' => false,
+            'backup_frequency' => 'weekly',
+            'backup_retention' => 30,
+            'csrf_token_lifetime' => 60,
+            'rate_limit_requests' => 30,
+            'rate_limit_lockout' => 60,
+            'log_all_actions' => true,
+            'log_failed_logins' => true,
+            'log_security_events' => true
         ];
         $message = '✅ All settings reset to defaults';
         $messageType = 'success';
@@ -659,6 +739,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             auditLog('admin_password_reset', ['user_id' => $userId], 'warning', 'security');
         }
     }
+
+    elseif ($action === 'change_password') {
+        $currentUser = getCurrentUser();
+        $oldPassword = $_POST['old_password'] ?? '';
+        $newPassword = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['new_password_confirm'] ?? '';
+        
+        if (!$currentUser) {
+            $message = '❌ You must be logged in to change your password';
+            $messageType = 'error';
+        } elseif ($newPassword !== $confirmPassword) {
+            $message = '❌ New passwords do not match';
+            $messageType = 'error';
+        } else {
+            $result = changeUserPassword($currentUser['id'], $oldPassword, $newPassword);
+            $message = $result['message'];
+            $messageType = $result['success'] ? 'success' : 'error';
+        }
+    }
+
+    elseif ($action === 'save_filter') {
+        $filterName = sanitizeInput($_POST['filter_name'] ?? '');
+        $collectionKey = sanitizeInput($_POST['collection'] ?? ($collectionName ?? ''));
+        if ($filterName === '') {
+            $message = '❌ Filter name is required';
+            $messageType = 'error';
+        } else {
+            $_SESSION['saved_filters'] = $_SESSION['saved_filters'] ?? [];
+            $_SESSION['saved_filters'][$collectionKey] = $_SESSION['saved_filters'][$collectionKey] ?? [];
+
+            $newFilter = [
+                'id' => uniqid('filter_', true),
+                'name' => $filterName,
+                'params' => [
+                    'search' => sanitizeInput($_POST['search'] ?? ''),
+                    'sort' => sanitizeInput($_POST['sort'] ?? ''),
+                    'order' => ($_POST['order'] ?? '-1') === '1' ? '1' : '-1',
+                    'filter' => trim((string) ($_POST['filter'] ?? ''))
+                ],
+                'created_at' => date('c')
+            ];
+
+            $_SESSION['saved_filters'][$collectionKey][] = $newFilter;
+            $_SESSION['saved_filters'][$collectionKey] = array_slice($_SESSION['saved_filters'][$collectionKey], -20);
+            $message = '✅ Filter saved';
+            $messageType = 'success';
+            auditLog('filter_saved', ['collection' => $collectionKey, 'name' => $filterName], 'info', 'system');
+        }
+    }
+
+    elseif ($action === 'delete_filter') {
+        $collectionKey = sanitizeInput($_POST['collection'] ?? ($collectionName ?? ''));
+        $filterId = sanitizeInput($_POST['filter_id'] ?? '');
+        $filters = $_SESSION['saved_filters'][$collectionKey] ?? [];
+        if ($filterId === '' || empty($filters)) {
+            $message = '❌ Filter not found';
+            $messageType = 'error';
+        } else {
+            $filters = array_values(array_filter($filters, function ($item) use ($filterId) {
+                return ($item['id'] ?? '') !== $filterId;
+            }));
+            $_SESSION['saved_filters'][$collectionKey] = $filters;
+            $message = '✅ Filter removed';
+            $messageType = 'success';
+            auditLog('filter_deleted', ['collection' => $collectionKey], 'warning', 'system');
+        }
+    }
+
+    elseif ($action === 'export_query_history') {
+        $history = getQueryHistory(50);
+        header('Content-Type: application/json; charset=utf-8');
+        header('Content-Disposition: attachment; filename="query_history_' . date('Ymd_His') . '.json"');
+        echo json_encode($history, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     
     // Handle Audit Log Actions
     elseif ($action === 'export_audit_log') {
@@ -716,6 +871,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         try {
             $queryResults = [];
+            $maxResultsSetting = (int) getSetting('max_results', 1000);
+            $maxResultsSetting = max(100, min(10000, $maxResultsSetting));
+            $queryTimeoutMs = (int) getSetting('query_timeout', 30) * 1000;
+            $queryTimeoutMs = max(5000, min(300000, $queryTimeoutMs));
+            $exportPrefix = sanitizeInput(getSetting('export_filename_prefix', 'export'));
+            if ($exportPrefix === '') {
+                $exportPrefix = 'export';
+            }
+            $timestampExports = (bool) getSetting('timestamp_exports', true);
+            $compressExports = (bool) getSetting('compress_exports', false);
+            $includeMetadata = (bool) getSetting('include_metadata', true);
 
             $sortField = sanitizeInput($_POST['sort'] ?? '_id');
             $sortOrder = ($_POST['sort_order'] ?? 'desc') === 'asc' ? 1 : -1;
@@ -723,9 +889,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($limit < 1) {
                 $limit = 1;
             }
-            if ($limit > 5000) {
-                $limit = 5000;
-            }
+            $limit = min($limit, $maxResultsSetting);
 
             // Projection (comma-separated fields)
             $projection = null;
@@ -753,7 +917,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $query = json_decode($customQuery, true);
                 $sanitizedQuery = sanitizeMongoQuery($query);
 
-                $findOptions = ['limit' => $limit, 'sort' => [$sortField => $sortOrder]];
+                $findOptions = [
+                    'limit' => $limit,
+                    'sort' => [$sortField => $sortOrder],
+                    'maxTimeMS' => $queryTimeoutMs
+                ];
                 if ($projection) {
                     $findOptions['projection'] = $projection;
                 }
@@ -832,7 +1000,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         break;
                 }
 
-                $findOptions = ['limit' => $limit, 'sort' => [$sortField => $sortOrder]];
+                $findOptions = [
+                    'limit' => $limit,
+                    'sort' => [$sortField => $sortOrder],
+                    'maxTimeMS' => $queryTimeoutMs
+                ];
                 if ($projection) {
                     $findOptions['projection'] = $projection;
                 }
@@ -840,22 +1012,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $queryResults = $collection->find($mongoQuery, $findOptions)->toArray();
             }
 
-            $baseFile = 'mongo_export_' . $collectionName . '_' . date('Ymd_His');
+            $baseFile = $exportPrefix . '_' . $collectionName;
+            if ($timestampExports) {
+                $baseFile .= '_' . date('Ymd_His');
+            }
 
             if ($action === 'export_query_json') {
                 auditLog('query_exported_json', ['count' => count($queryResults), 'collection' => $collectionName], 'info', 'data');
-                header('Content-Type: application/json; charset=utf-8');
-                header('Content-Disposition: attachment; filename="' . $baseFile . '.json"');
-                echo json_encode($queryResults, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+                $payload = $queryResults;
+                if ($includeMetadata) {
+                    $payload = [
+                        'metadata' => [
+                            'collection' => $collectionName,
+                            'exported_at' => date('c'),
+                            'count' => count($queryResults)
+                        ],
+                        'data' => $queryResults
+                    ];
+                }
+                $jsonOutput = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+                if ($compressExports) {
+                    $gzipOutput = gzencode($jsonOutput, 9);
+                    header('Content-Type: application/gzip');
+                    header('Content-Encoding: gzip');
+                    header('Content-Disposition: attachment; filename="' . $baseFile . '.json.gz"');
+                    echo $gzipOutput;
+                } else {
+                    header('Content-Type: application/json; charset=utf-8');
+                    header('Content-Disposition: attachment; filename="' . $baseFile . '.json"');
+                    echo $jsonOutput;
+                }
                 exit;
             }
 
             // CSV export
             auditLog('query_exported_csv', ['count' => count($queryResults), 'collection' => $collectionName], 'info', 'data');
-            header('Content-Type: text/csv; charset=utf-8');
-            header('Content-Disposition: attachment; filename="' . $baseFile . '.csv"');
-
-            $out = fopen('php://output', 'w');
+            $out = fopen('php://temp', 'r+');
             if ($out === false) {
                 throw new Exception('Unable to open output stream');
             }
@@ -875,6 +1067,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $columns = ['_id'];
             }
 
+            if ($includeMetadata) {
+                fwrite($out, '# Exported at: ' . date('c') . PHP_EOL);
+                fwrite($out, '# Collection: ' . $collectionName . PHP_EOL);
+                fwrite($out, '# Count: ' . count($queryResults) . PHP_EOL);
+            }
             fputcsv($out, $columns);
 
             foreach ($queryResults as $doc) {
@@ -890,7 +1087,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 fputcsv($out, $row);
             }
 
+            rewind($out);
+            $csvOutput = stream_get_contents($out);
             fclose($out);
+
+            if ($compressExports) {
+                $gzipOutput = gzencode($csvOutput, 9);
+                header('Content-Type: application/gzip');
+                header('Content-Encoding: gzip');
+                header('Content-Disposition: attachment; filename="' . $baseFile . '.csv.gz"');
+                echo $gzipOutput;
+            } else {
+                header('Content-Type: text/csv; charset=utf-8');
+                header('Content-Disposition: attachment; filename="' . $baseFile . '.csv"');
+                echo $csvOutput;
+            }
             exit;
         } catch (Exception $e) {
             http_response_code(400);
@@ -969,7 +1180,19 @@ include 'templates/header.php';
         </div>
     </header>
 
-    <?php if ($message): ?>
+    <?php
+    $showMessage = true;
+    if ($messageType === 'success' && !getSetting('show_success_messages', true)) {
+        $showMessage = false;
+    }
+    if ($messageType === 'error' && !getSetting('show_error_messages', true)) {
+        $showMessage = false;
+    }
+    if ($messageType === 'warning' && !getSetting('show_warning_messages', true)) {
+        $showMessage = false;
+    }
+    ?>
+    <?php if ($message && $showMessage): ?>
         <div class="alert alert-<?php echo $messageType; ?>" id="alertMessage">
             <div class="alert-content">
                 <span class="alert-icon">
@@ -1225,14 +1448,20 @@ include 'templates/header.php';
         console.log('Script started, defining functions...');
         // Auto-dismiss alerts after 5 seconds
         const alertMessage = document.getElementById('alertMessage');
-        if (alertMessage) {
+        const autoDismissAlerts = <?php echo getSetting('auto_dismiss_alerts', true) ? 'true' : 'false'; ?>;
+        const alertDurationMs = <?php echo (int) getSetting('alert_duration', 5); ?> * 1000;
+        if (alertMessage && autoDismissAlerts) {
             setTimeout(function () {
                 alertMessage.style.animation = 'fadeOut 0.5s ease-out';
                 setTimeout(function () {
                     alertMessage.remove();
                 }, 500);
-            }, 5000);
+            }, alertDurationMs);
         }
+        const confirmDeletes = <?php echo getSetting('confirm_deletions', true) ? 'true' : 'false'; ?>;
+        const refreshIntervalSeconds = <?php echo (int) getSetting('refresh_interval', 30); ?>;
+        const autoRefreshDefault = <?php echo getSetting('auto_refresh', false) ? 'true' : 'false'; ?>;
+        const defaultViewMode = <?php echo json_encode(getSetting('default_view_mode', 'table')); ?>;
 
         // Browse Tab Functions
         function performSearch() {
@@ -1348,24 +1577,76 @@ include 'templates/header.php';
             performSearch();
         }
 
-        function toggleView() {
+        function saveCurrentFilter() {
+            const name = prompt('Save filter as:');
+            if (!name) {
+                return;
+            }
+            const search = document.getElementById('searchInput')?.value || '';
+            const sort = document.getElementById('sortField')?.value || '';
+            const order = document.getElementById('sortOrder')?.value || '';
+            const jsonFilter = document.getElementById('jsonFilter')?.value || '';
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = window.location.pathname;
+            form.innerHTML = `
+                <input type="hidden" name="action" value="save_filter">
+                <input type="hidden" name="csrf_token" value="${csrfToken}">
+                <input type="hidden" name="collection" value="<?php echo htmlspecialchars($collectionName); ?>">
+                <input type="hidden" name="filter_name" value="${escapeHtml(name)}">
+                <input type="hidden" name="search" value="${escapeHtml(search)}">
+                <input type="hidden" name="sort" value="${escapeHtml(sort)}">
+                <input type="hidden" name="order" value="${escapeHtml(order)}">
+                <input type="hidden" name="filter" value="${escapeHtml(jsonFilter)}">
+            `;
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function applyViewMode(mode) {
             const tableView = document.getElementById('tableView');
             const gridView = document.getElementById('gridView');
             const viewIcon = document.getElementById('viewIcon');
             const viewText = document.getElementById('viewText');
+            if (!tableView || !gridView || !viewIcon || !viewText) {
+                return;
+            }
 
-            if (tableView.style.display === 'none') {
-                tableView.style.display = 'block';
-                gridView.style.display = 'none';
-                viewIcon.textContent = '📊';
-                viewText.textContent = 'Grid View';
-            } else {
+            if (mode === 'grid') {
                 tableView.style.display = 'none';
                 gridView.style.display = 'block';
                 viewIcon.textContent = '📋';
                 viewText.textContent = 'Table View';
+            } else {
+                tableView.style.display = 'block';
+                gridView.style.display = 'none';
+                viewIcon.textContent = '📊';
+                viewText.textContent = 'Grid View';
             }
         }
+
+        function toggleView() {
+            const tableView = document.getElementById('tableView');
+            if (!tableView) {
+                return;
+            }
+            const nextMode = tableView.style.display === 'none' ? 'table' : 'grid';
+            applyViewMode(nextMode);
+            try {
+                localStorage.setItem('viewMode', nextMode);
+            } catch (e) {}
+        }
+
+        (function initViewMode() {
+            let storedMode = null;
+            try {
+                storedMode = localStorage.getItem('viewMode');
+            } catch (e) {}
+            const initialMode = storedMode || defaultViewMode;
+            applyViewMode(initialMode);
+        })();
 
         function changePerPage(value) {
             window.location.href = window.location.pathname + '?collection=' + encodeURIComponent('<?php echo $collectionName; ?>') + '&per_page=' + value;
@@ -1443,7 +1724,7 @@ include 'templates/header.php';
                 return;
             }
 
-            if (confirm(`Delete ${selected.length} selected documents? This cannot be undone!`)) {
+            if (!confirmDeletes || confirm(`Delete ${selected.length} selected documents? This cannot be undone!`)) {
                 const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
                 const collectionName = new URLSearchParams(window.location.search).get('collection') || '';
                 
@@ -1532,7 +1813,7 @@ include 'templates/header.php';
         }
 
         function deleteDoc(docId) {
-            if (confirm('Delete this document? This cannot be undone!')) {
+            if (!confirmDeletes || confirm('Delete this document? This cannot be undone!')) {
                 const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
                 const collectionName = new URLSearchParams(window.location.search).get('collection') || '';
                 
@@ -1599,10 +1880,9 @@ include 'templates/header.php';
             autoRefreshEnabled = !autoRefreshEnabled;
 
             if (autoRefreshEnabled) {
-                const interval = parseInt(document.getElementById('refreshInterval')?.textContent || '30');
                 autoRefreshInterval = setInterval(() => {
                     window.location.reload();
-                }, interval * 1000);
+                }, refreshIntervalSeconds * 1000);
                 btn.textContent = '⏸️ Stop Auto-Refresh';
                 btn.style.background = '#dc3545';
                 status.style.display = 'flex';
@@ -1615,6 +1895,11 @@ include 'templates/header.php';
                 btn.style.background = '#28a745';
                 status.style.display = 'none';
             }
+        }
+
+        document.getElementById('refreshInterval')?.textContent = refreshIntervalSeconds;
+        if (autoRefreshDefault) {
+            toggleAutoRefresh();
         }
 
         // Enter key to search

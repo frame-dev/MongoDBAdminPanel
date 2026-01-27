@@ -13,7 +13,7 @@ if (strpos($clean_path, '?') !== false) {
     $clean_path = substr($clean_path, 0, strpos($clean_path, '?'));
 }
 
-// For root path, serve index.php
+// For the root path, serve index.php
 if ($clean_path === '/' || $clean_path === '') {
     require __DIR__ . '/index.php';
     return true;
@@ -66,4 +66,4 @@ if (file_exists($requested_file) && is_file($requested_file)) {
 // Route all requests to index.php for PHP routing
 require __DIR__ . '/index.php';
 return true;
-?>
+

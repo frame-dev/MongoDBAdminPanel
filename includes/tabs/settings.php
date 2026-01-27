@@ -99,6 +99,35 @@
                         </select>
                     </div>
                 </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 20px;">
+                    <div>
+                        <label style="font-weight: 600; margin-bottom: 8px; display: block;">Default Sort Field:</label>
+                        <select name="default_sort_field"
+                            style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                            <option value="_id" <?php echo ($_SESSION['settings']['default_sort_field'] ?? '_id') == '_id' ? 'selected' : ''; ?>>_id</option>
+                            <option value="created_at" <?php echo ($_SESSION['settings']['default_sort_field'] ?? '') == 'created_at' ? 'selected' : ''; ?>>created_at</option>
+                            <option value="updated_at" <?php echo ($_SESSION['settings']['default_sort_field'] ?? '') == 'updated_at' ? 'selected' : ''; ?>>updated_at</option>
+                            <option value="name" <?php echo ($_SESSION['settings']['default_sort_field'] ?? '') == 'name' ? 'selected' : ''; ?>>name</option>
+                            <option value="email" <?php echo ($_SESSION['settings']['default_sort_field'] ?? '') == 'email' ? 'selected' : ''; ?>>email</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; margin-bottom: 8px; display: block;">Default Sort Order:</label>
+                        <select name="default_sort_order"
+                            style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                            <option value="-1" <?php echo ($_SESSION['settings']['default_sort_order'] ?? '-1') == '-1' ? 'selected' : ''; ?>>Descending</option>
+                            <option value="1" <?php echo ($_SESSION['settings']['default_sort_order'] ?? '-1') == '1' ? 'selected' : ''; ?>>Ascending</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; margin-bottom: 8px; display: block;">Default View Mode:</label>
+                        <select name="default_view_mode"
+                            style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                            <option value="table" <?php echo ($_SESSION['settings']['default_view_mode'] ?? 'table') == 'table' ? 'selected' : ''; ?>>Table</option>
+                            <option value="grid" <?php echo ($_SESSION['settings']['default_view_mode'] ?? 'table') == 'grid' ? 'selected' : ''; ?>>Grid</option>
+                        </select>
+                    </div>
+                </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
                     <div>
                         <label style="font-weight: 600; margin-bottom: 8px; display: block;">JSON Display:</label>
@@ -186,6 +215,15 @@
                                     max="10000"
                                     style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
                             </div>
+                            <div>
+                                <label
+                                    style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 14px;">Default
+                                    Query Limit:</label>
+                                <input type="number" name="query_default_limit"
+                                    value="<?php echo $_SESSION['settings']['query_default_limit'] ?? 50; ?>" min="10"
+                                    max="10000"
+                                    style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                            </div>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="checkbox" name="query_cache" value="1" <?php echo ($_SESSION['settings']['query_cache'] ?? true) ? 'checked' : ''; ?>>
                                 <span style="font-size: 14px;">Enable Query Caching</span>
@@ -214,6 +252,15 @@
                                     TTL (minutes):</label>
                                 <input type="number" name="cache_ttl"
                                     value="<?php echo $_SESSION['settings']['cache_ttl'] ?? 15; ?>" min="1" max="1440"
+                                    style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                            </div>
+                            <div>
+                                <label
+                                    style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 14px;">Schema
+                                    Sample Size:</label>
+                                <input type="number" name="schema_sample_size"
+                                    value="<?php echo $_SESSION['settings']['schema_sample_size'] ?? 100; ?>" min="10"
+                                    max="500"
                                     style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
                             </div>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -496,6 +543,12 @@
                                     <option value="excel" <?php echo ($_SESSION['settings']['default_export_format'] ?? '') == 'excel' ? 'selected' : ''; ?>>Excel</option>
                                     <option value="xml" <?php echo ($_SESSION['settings']['default_export_format'] ?? '') == 'xml' ? 'selected' : ''; ?>>XML</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 14px;">Filename Prefix:</label>
+                                <input type="text" name="export_filename_prefix"
+                                    value="<?php echo $_SESSION['settings']['export_filename_prefix'] ?? 'export'; ?>"
+                                    style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
                             </div>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="checkbox" name="include_metadata" value="1" <?php echo ($_SESSION['settings']['include_metadata'] ?? true) ? 'checked' : ''; ?>>

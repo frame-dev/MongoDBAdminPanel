@@ -13,17 +13,43 @@
  * @license MIT
  */
 
+// Settings helper (session-backed)
+function getSetting($key, $default = null) {
+    if (!isset($_SESSION['settings']) || !is_array($_SESSION['settings'])) {
+        return $default;
+    }
+    return array_key_exists($key, $_SESSION['settings']) ? $_SESSION['settings'][$key] : $default;
+}
+
 // Generate CSRF token
 function generateCSRFToken() {
-    if (!isset($_SESSION['csrf_token'])) {
+    $lifetimeMinutes = (int) getSetting('csrf_token_lifetime', 60);
+    $lifetimeMinutes = max(10, min(1440, $lifetimeMinutes));
+    $expiresIn = $lifetimeMinutes * 60;
+    $createdAt = $_SESSION['csrf_token_created'] ?? 0;
+
+    if (!isset($_SESSION['csrf_token']) || !$createdAt || (time() - $createdAt) > $expiresIn) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        $_SESSION['csrf_token_created'] = time();
     }
     return $_SESSION['csrf_token'];
 }
 
 // Verify CSRF token
 function verifyCSRFToken($token) {
-    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+    if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+        return false;
+    }
+    $lifetimeMinutes = (int) getSetting('csrf_token_lifetime', 60);
+    $lifetimeMinutes = max(10, min(1440, $lifetimeMinutes));
+    $expiresIn = $lifetimeMinutes * 60;
+    $createdAt = $_SESSION['csrf_token_created'] ?? 0;
+
+    if (!$createdAt || (time() - $createdAt) > $expiresIn) {
+        unset($_SESSION['csrf_token'], $_SESSION['csrf_token_created']);
+        return false;
+    }
+    return true;
 }
 
 // Sanitize input to prevent XSS
@@ -127,6 +153,72 @@ function sanitizeMongoQuery($query) {
         }
     }
     return $query;
+}
+
+// Format timestamps using display settings
+function formatDisplayDate($value, $format = null) {
+    $format = $format ?? (string) getSetting('date_format', 'Y-m-d H:i:s');
+    $timestamp = null;
+
+    if ($value instanceof DateTimeInterface) {
+        $timestamp = $value->getTimestamp();
+    } elseif (is_object($value) && method_exists($value, 'toDateTime')) {
+        $timestamp = $value->toDateTime()->getTimestamp();
+    } elseif (is_numeric($value)) {
+        $timestamp = (int) $value;
+    } else {
+        $parsed = strtotime((string) $value);
+        if ($parsed !== false) {
+            $timestamp = $parsed;
+        }
+    }
+
+    if ($timestamp === null) {
+        return (string) $value;
+    }
+
+    if ($format === 'relative') {
+        $diff = time() - $timestamp;
+        if ($diff < 0) {
+            return 'in the future';
+        }
+        if ($diff < 60) {
+            return $diff . ' seconds ago';
+        }
+        if ($diff < 3600) {
+            return floor($diff / 60) . ' minutes ago';
+        }
+        if ($diff < 86400) {
+            return floor($diff / 3600) . ' hours ago';
+        }
+        if ($diff < 604800) {
+            return floor($diff / 86400) . ' days ago';
+        }
+        return date('Y-m-d', $timestamp);
+    }
+
+    return date($format, $timestamp);
+}
+
+// Format JSON payloads based on display settings
+function formatJsonForDisplay($data) {
+    $options = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+    if (getSetting('pretty_print', true)) {
+        $options |= JSON_PRETTY_PRINT;
+    }
+    return json_encode($data, $options);
+}
+
+// Format ObjectId for display based on settings
+function formatObjectIdDisplay($id, $shortLength = 8) {
+    $id = (string) $id;
+    if (getSetting('show_objectid_as_string', false)) {
+        return $id;
+    }
+    if (strlen($id) <= $shortLength) {
+        return $id;
+    }
+    return substr($id, -$shortLength);
 }
 
 // Log security events

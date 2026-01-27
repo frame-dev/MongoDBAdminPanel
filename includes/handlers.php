@@ -32,12 +32,18 @@ if (isset($_SESSION['message'])) {
 
 // Handle search and filters
 $searchQuery = $_GET['search'] ?? '';
-$sortField = $_GET['sort'] ?? '_id';
-$sortOrder = $_GET['order'] ?? '-1';
-$perPage = (int) ($_GET['per_page'] ?? 50);
-$perPage = max(10, min(100, $perPage)); // Limit between 10 and 100
+$sortField = sanitizeInput($_GET['sort'] ?? (string) getSetting('default_sort_field', '_id'));
+$sortOrder = $_GET['order'] ?? (string) getSetting('default_sort_order', '-1');
+$sortOrder = $sortOrder === '1' ? '1' : '-1';
+$perPage = (int) ($_GET['per_page'] ?? getSetting('items_per_page', 50));
+$perPage = max(10, min(200, $perPage)); // Limit between 10 and 200
 $pageSize = $perPage;
 $page = max(1, (int) ($_GET['page'] ?? 1));
+
+$maxResultsSetting = (int) getSetting('max_results', 1000);
+$maxResultsSetting = max(100, min(10000, $maxResultsSetting));
+$queryTimeoutMs = (int) getSetting('query_timeout', 30) * 1000;
+$queryTimeoutMs = max(5000, min(300000, $queryTimeoutMs));
 
 $filter = [];
 if ($searchQuery) {
@@ -62,6 +68,24 @@ if ($searchQuery) {
             }
             $filter = ['$or' => $orConditions];
         }
+    }
+}
+
+$jsonFilterRaw = trim((string) ($_GET['filter'] ?? ''));
+if ($jsonFilterRaw !== '') {
+    if (validateJSON($jsonFilterRaw)) {
+        $jsonFilter = json_decode($jsonFilterRaw, true);
+        $jsonFilter = sanitizeMongoQuery($jsonFilter);
+        if (!empty($jsonFilter)) {
+            if (!empty($filter)) {
+                $filter = ['$and' => [$filter, $jsonFilter]];
+            } else {
+                $filter = $jsonFilter;
+            }
+        }
+    } else {
+        $message = 'Invalid JSON filter. Please check your syntax.';
+        $messageType = 'error';
     }
 }
 
@@ -130,7 +154,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Rate limiting
-    if (!checkRateLimit('post_action', 30, 60)) {
+    $rateLimitRequests = (int) getSetting('rate_limit_requests', 30);
+    $rateLimitLockout = (int) getSetting('rate_limit_lockout', 60);
+    $rateLimitRequests = max(10, min(1000, $rateLimitRequests));
+    $rateLimitLockout = max(30, min(3600, $rateLimitLockout));
+
+    if (!checkRateLimit('post_action', $rateLimitRequests, $rateLimitLockout)) {
         $message = 'Too many requests. Please wait a moment.';
         $messageType = 'error';
         logSecurityEvent('rate_limit_exceeded', ['action' => $action]);
@@ -483,14 +512,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'export') {
             try {
                 $sortOptions = [$sortField => (int) $sortOrder];
-                $exportDocuments = $collection->find($filter, ['sort' => $sortOptions]);
+                $exportDocuments = $collection->find($filter, [
+                    'sort' => $sortOptions,
+                    'limit' => $maxResultsSetting,
+                    'maxTimeMS' => $queryTimeoutMs
+                ]);
                 $exportList = iterator_to_array($exportDocuments);
 
                 $data = array_map(fn($doc) => json_decode(json_encode($doc), true), $exportList);
 
-                header('Content-Type: application/json');
-                header('Content-Disposition: attachment; filename="export_' . date('Y-m-d_H-i-s') . '.json"');
-                echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                $exportPrefix = sanitizeInput(getSetting('export_filename_prefix', 'export'));
+                if ($exportPrefix === '') {
+                    $exportPrefix = 'export';
+                }
+                $timestampExports = (bool) getSetting('timestamp_exports', true);
+                $compressExports = (bool) getSetting('compress_exports', false);
+                $includeMetadata = (bool) getSetting('include_metadata', true);
+
+                $baseFile = $exportPrefix . '_' . $collectionName;
+                if ($timestampExports) {
+                    $baseFile .= '_' . date('Y-m-d_H-i-s');
+                }
+
+                $payload = $data;
+                if ($includeMetadata) {
+                    $payload = [
+                        'metadata' => [
+                            'collection' => $collectionName,
+                            'exported_at' => date('c'),
+                            'count' => count($data)
+                        ],
+                        'data' => $data
+                    ];
+                }
+
+                $jsonOutput = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                if ($compressExports) {
+                    $gzipOutput = gzencode($jsonOutput, 9);
+                    header('Content-Type: application/gzip');
+                    header('Content-Encoding: gzip');
+                    header('Content-Disposition: attachment; filename="' . $baseFile . '.json.gz"');
+                    echo $gzipOutput;
+                } else {
+                    header('Content-Type: application/json; charset=utf-8');
+                    header('Content-Disposition: attachment; filename="' . $baseFile . '.json"');
+                    echo $jsonOutput;
+                }
                 exit;
             } catch (Exception $e) {
                 $message = 'Error: ' . $e->getMessage();
@@ -952,7 +1019,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'exportcsv') {
             try {
                 $sortOptions = [$sortField => (int) $sortOrder];
-                $csvDocuments = $collection->find($filter, ['sort' => $sortOptions]);
+                $csvDocuments = $collection->find($filter, [
+                    'sort' => $sortOptions,
+                    'limit' => $maxResultsSetting,
+                    'maxTimeMS' => $queryTimeoutMs
+                ]);
                 $csvList = iterator_to_array($csvDocuments);
 
                 if (empty($csvList)) {
@@ -966,24 +1037,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $allKeys = array_values(array_unique(array_merge($allKeys, array_keys($docArray))));
                 }
 
-                // WICHTIG: Kein Output vor den Headern
-                if (ob_get_length()) {
-                    ob_clean();
+                $exportPrefix = sanitizeInput(getSetting('export_filename_prefix', 'export'));
+                if ($exportPrefix === '') {
+                    $exportPrefix = 'export';
                 }
+                $timestampExports = (bool) getSetting('timestamp_exports', true);
+                $compressExports = (bool) getSetting('compress_exports', false);
+                $includeMetadata = (bool) getSetting('include_metadata', true);
 
-                header('Content-Type: text/csv; charset=UTF-8');
-                header('Content-Disposition: attachment; filename="export_' . date('Y-m-d_H-i-s') . '.csv"');
-                header('Pragma: no-cache');
-                header('Expires: 0');
+                $baseFile = $exportPrefix . '_' . $collectionName;
+                if ($timestampExports) {
+                    $baseFile .= '_' . date('Y-m-d_H-i-s');
+                }
 
                 $delimiter = ';'; // am kompatibelsten (Excel DE)
                 $enclosure = '"';
                 $escape = '\\';
 
-                $output = fopen('php://output', 'w');
+                $output = fopen('php://temp', 'r+');
 
                 // UTF-8 BOM für Excel
                 fwrite($output, "\xEF\xBB\xBF");
+
+                if ($includeMetadata) {
+                    fwrite($output, '# Exported at: ' . date('c') . PHP_EOL);
+                    fwrite($output, '# Collection: ' . $collectionName . PHP_EOL);
+                    fwrite($output, '# Count: ' . count($csvList) . PHP_EOL);
+                }
 
                 // Header-Zeile
                 fputcsv($output, $allKeys, $delimiter, $enclosure, $escape);
@@ -1011,7 +1091,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     fputcsv($output, $row, $delimiter, $enclosure, $escape);
                 }
 
+                rewind($output);
+                $csvOutput = stream_get_contents($output);
                 fclose($output);
+
+                if ($compressExports) {
+                    $gzipOutput = gzencode($csvOutput, 9);
+                    header('Content-Type: application/gzip');
+                    header('Content-Encoding: gzip');
+                    header('Content-Disposition: attachment; filename="' . $baseFile . '.csv.gz"');
+                    echo $gzipOutput;
+                } else {
+                    header('Content-Type: text/csv; charset=UTF-8');
+                    header('Content-Disposition: attachment; filename="' . $baseFile . '.csv"');
+                    header('Pragma: no-cache');
+                    header('Expires: 0');
+                    echo $csvOutput;
+                }
                 exit;
 
             } catch (Exception $e) {

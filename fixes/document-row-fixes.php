@@ -9,6 +9,7 @@ function generateDocumentTableRow($doc) {
     $docId = (string) ($doc['_id'] ?? '');
     $docJson = json_encode($docArray);
     $docPreview = implode(', ', array_slice($docArray, 0, 2));
+    $displayId = formatObjectIdDisplay($docId, 12);
     
     if (strlen($docPreview) > 50) {
         $docPreview = substr($docPreview, 0, 50) . '...';
@@ -17,7 +18,7 @@ function generateDocumentTableRow($doc) {
     $html = '<tr data-doc-id="' . htmlspecialchars($docId) . '" data-json="' . htmlspecialchars($docJson) . '" style="border-bottom: 1px solid #dee2e6; transition: background 0.2s;">';
     $html .= '<td style="padding: 12px; color: #666; font-family: monospace; font-size: 12px;">';
     $html .= '<input type="checkbox" class="doc-checkbox" value="' . htmlspecialchars($docId) . '" style="display: none; margin-right: 8px;">';
-    $html .= htmlspecialchars(substr($docId, -12));
+    $html .= htmlspecialchars($displayId);
     $html .= '</td>';
     $html .= '<td style="padding: 12px; color: #666;">';
     $html .= '<div style="font-size: 13px; line-height: 1.5;">' . htmlspecialchars($docPreview) . '</div>';

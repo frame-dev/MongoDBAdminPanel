@@ -1,3 +1,16 @@
+    <?php
+    $querySortFields = $detectedFields ?? ['_id', 'created_at', 'updated_at'];
+    $querySortFields = array_values(array_filter($querySortFields, function ($field) {
+        return $field !== '_id';
+    }));
+    $currentSortOrder = $_POST['sort_order'] ?? 'desc';
+    $maxResultsSetting = (int) getSetting('max_results', 1000);
+    $maxResultsSetting = max(100, min(10000, $maxResultsSetting));
+    $defaultQueryLimit = (int) getSetting('query_default_limit', 50);
+    $defaultQueryLimit = max(1, min($maxResultsSetting, $defaultQueryLimit));
+    $queryTimeoutMs = (int) getSetting('query_timeout', 30) * 1000;
+    $queryTimeoutMs = max(5000, min(300000, $queryTimeoutMs));
+    ?>
     <div id="query" class="tab-content">
         <h2 style="margin-bottom: 20px;">🔍 Advanced Query Builder</h2>
         <div
@@ -34,14 +47,7 @@
                             style="display: block; font-weight: 600; margin-bottom: 8px; color: #555;">Operator:</label>
                         <select name="query_op"
                             style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
-                            <option value="equals">Equals (=)</option>
-                            <option value="contains">Contains</option>
-                            <option value="starts">Starts With</option>
-                            <option value="ends">Ends With</option>
-                            <option value="gt">Greater Than (&gt;)</option>
-                            <option value="lt">Less Than (&lt;)</option>
-                            <option value="gte">Greater or Equal (&ge;)</option>
-                            <option value="lte">Less or Equal (&le;)</option>
+                            <?php echo generateOperatorOptions(); ?>
                         </select>
                     </div>
                     <div>
@@ -49,14 +55,12 @@
                             By:</label>
                         <select name="sort"
                             style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
-                            <option value="_id">_id</option>
-                            <option value="created_at">Created Date</option>
-                            <option value="updated_at">Updated Date</option>
+                            <?php echo generateFieldOptions($querySortFields, '_id'); ?>
                         </select>
                     </div>
                     <div>
                         <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #555;">Limit:</label>
-                        <input type="number" name="limit" value="50" min="1" max="1000"
+                        <input type="number" name="limit" value="<?php echo $defaultQueryLimit; ?>" min="1" max="<?php echo $maxResultsSetting; ?>"
                             style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
                     </div>
                 </div>
@@ -67,12 +71,7 @@
                             Type:</label>
                         <select name="value_type"
                             style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
-                            <option value="string" selected>String</option>
-                            <option value="number">Number</option>
-                            <option value="bool">Boolean</option>
-                            <option value="null">Null</option>
-                            <option value="objectid">ObjectId</option>
-                            <option value="date">Date</option>
+                            <?php echo generateValueTypeOptions(); ?>
                         </select>
                     </div>
                     <div>
@@ -80,8 +79,7 @@
                             Order:</label>
                         <select name="sort_order"
                             style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
-                            <option value="desc" selected>Descending</option>
-                            <option value="asc">Ascending</option>
+                            <?php echo generateSortOrderOptions($currentSortOrder); ?>
                         </select>
                     </div>
                     <div>
@@ -123,14 +121,13 @@
                             Order:</label>
                         <select name="sort_order"
                             style="width: 100%; padding: 10px 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 13px;">
-                            <option value="desc" selected>Descending</option>
-                            <option value="asc">Ascending</option>
+                            <?php echo generateSortOrderOptions($currentSortOrder); ?>
                         </select>
                     </div>
                     <div>
                         <label
                             style="display: block; font-weight: 600; margin-bottom: 6px; color: #555; font-size: 13px;">Limit:</label>
-                        <input type="number" name="limit" value="100" min="1" max="5000"
+                        <input type="number" name="limit" value="<?php echo $defaultQueryLimit; ?>" min="1" max="<?php echo $maxResultsSetting; ?>"
                             style="width: 100%; padding: 10px 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 13px;">
                     </div>
                     <div>
@@ -166,89 +163,23 @@
                         $valueType = $_POST['value_type'] ?? 'string';
                         $sortField = sanitizeInput($_POST['sort'] ?? '_id');
                         $sortOrder = ($_POST['sort_order'] ?? 'desc') === 'asc' ? 1 : -1;
-                        $limit = (int) ($_POST['limit'] ?? 50);
+                        $limit = (int) ($_POST['limit'] ?? $defaultQueryLimit);
+                        $limit = max(1, min($maxResultsSetting, $limit));
 
                         // Projection (comma-separated fields)
-                        $projection = null;
                         $projectionRaw = trim((string) ($_POST['projection'] ?? ''));
-                        if ($projectionRaw !== '') {
-                            $fields = array_filter(array_map('trim', explode(',', $projectionRaw)));
-                            $proj = [];
-                            foreach ($fields as $f) {
-                                $f = sanitizeInput($f);
-                                if ($f !== '' && validateFieldName($f)) {
-                                    $proj[$f] = 1;
-                                }
-                            }
-                            if (!empty($proj)) {
-                                $projection = $proj;
-                            }
-                        }
+                        $projection = parseProjectionFields($projectionRaw);
 
                         // Type-coerce value
-                        $value = $rawValue;
-                        switch ($valueType) {
-                            case 'number':
-                                if (!is_numeric($rawValue)) {
-                                    throw new Exception('Value is not numeric');
-                                }
-                                $value = (strpos($rawValue, '.') !== false) ? (float) $rawValue : (int) $rawValue;
-                                break;
-                            case 'bool':
-                                $v = strtolower(trim($rawValue));
-                                $value = in_array($v, ['1', 'true', 'yes', 'y', 'on'], true);
-                                break;
-                            case 'null':
-                                $value = null;
-                                break;
-                            case 'objectid':
-                                $value = new MongoDB\BSON\ObjectId($rawValue);
-                                break;
-                            case 'date':
-                                $ts = strtotime($rawValue);
-                                if ($ts === false) {
-                                    throw new Exception('Invalid date value');
-                                }
-                                $value = new MongoDB\BSON\UTCDateTime($ts * 1000);
-                                break;
-                            case 'string':
-                            default:
-                                $value = $rawValue;
-                                break;
-                        }
+                        $value = coerceValueByType($rawValue, $valueType);
 
                         // Build MongoDB query
-                        $mongoQuery = [];
-                        switch ($operator) {
-                            case 'equals':
-                                $mongoQuery[$field] = $value;
-                                break;
-                            case 'contains':
-                                $mongoQuery[$field] = ['$regex' => $rawValue, '$options' => 'i'];
-                                break;
-                            case 'starts':
-                                $mongoQuery[$field] = ['$regex' => '^' . $rawValue, '$options' => 'i'];
-                                break;
-                            case 'ends':
-                                $mongoQuery[$field] = ['$regex' => $rawValue . '$', '$options' => 'i'];
-                                break;
-                            case 'gt':
-                                $mongoQuery[$field] = ['$gt' => $value];
-                                break;
-                            case 'lt':
-                                $mongoQuery[$field] = ['$lt' => $value];
-                                break;
-                            case 'gte':
-                                $mongoQuery[$field] = ['$gte' => $value];
-                                break;
-                            case 'lte':
-                                $mongoQuery[$field] = ['$lte' => $value];
-                                break;
-                        }
+                        $mongoQuery = buildMongoQueryByOperator($field, $operator, $value, $rawValue);
 
                         $findOptions = [
                             'sort' => [$sortField => $sortOrder],
-                            'limit' => $limit
+                            'limit' => $limit,
+                            'maxTimeMS' => $queryTimeoutMs
                         ];
                         if ($projection) {
                             $findOptions['projection'] = $projection;
@@ -273,32 +204,18 @@
 
                         $sortField = sanitizeInput($_POST['sort'] ?? '_id');
                         $sortOrder = ($_POST['sort_order'] ?? 'desc') === 'asc' ? 1 : -1;
-                        $limit = (int) ($_POST['limit'] ?? 100);
-                        if ($limit < 1) {
-                            $limit = 1;
-                        }
-                        if ($limit > 5000) {
-                            $limit = 5000;
-                        }
+                        $limit = (int) ($_POST['limit'] ?? $defaultQueryLimit);
+                        $limit = max(1, min($maxResultsSetting, $limit));
 
                         // Projection (comma-separated fields)
-                        $projection = null;
                         $projectionRaw = trim((string) ($_POST['projection'] ?? ''));
-                        if ($projectionRaw !== '') {
-                            $fields = array_filter(array_map('trim', explode(',', $projectionRaw)));
-                            $proj = [];
-                            foreach ($fields as $f) {
-                                $f = sanitizeInput($f);
-                                if ($f !== '' && validateFieldName($f)) {
-                                    $proj[$f] = 1;
-                                }
-                            }
-                            if (!empty($proj)) {
-                                $projection = $proj;
-                            }
-                        }
+                        $projection = parseProjectionFields($projectionRaw);
 
-                        $findOptions = ['limit' => $limit, 'sort' => [$sortField => $sortOrder]];
+                        $findOptions = [
+                            'limit' => $limit,
+                            'sort' => [$sortField => $sortOrder],
+                            'maxTimeMS' => $queryTimeoutMs
+                        ];
                         if ($projection) {
                             $findOptions['projection'] = $projection;
                         }
@@ -360,16 +277,7 @@
                         echo '<tbody>';
 
                         foreach ($queryResults as $doc) {
-                            $docId = (string) $doc['_id'];
-                            $docJson = json_encode($doc, JSON_PRETTY_PRINT);
-                            echo '<tr data-json="' . htmlspecialchars($docJson) . '">';
-                            echo '<td style="font-family: monospace; font-size: 12px;">' . htmlspecialchars($docId) . '</td>';
-                            echo '<td><pre style="background: #f8f9fa; padding: 10px; border-radius: 6px; max-height: 200px; overflow-y: auto; font-size: 11px;">' . htmlspecialchars(substr($docJson, 0, 500)) . '...</pre></td>';
-                            echo '<td>';
-                            echo '<button type="button" class="btn" style="background-color: #6c757d; color: white; font-size: 11px; padding: 4px 8px;" onclick="viewDocument(\'' . htmlspecialchars($docId) . '\', event); return false;">View</button> ';
-                            echo '<button type="button" class="btn btn-edit" style="font-size: 11px; padding: 4px 8px;" onclick="editDocument(\'' . htmlspecialchars($docId) . '\', event); return false;">Edit</button>';
-                            echo '</td>';
-                            echo '</tr>';
+                            echo generateDocumentTableRow($doc);
                         }
 
                         echo '</tbody></table>';
