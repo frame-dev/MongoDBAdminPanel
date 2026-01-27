@@ -30,7 +30,7 @@
                     <?php foreach ($availableTemplates as $template): ?>
                         <button type="button" class="btn"
                             onclick="loadTemplate('<?php echo htmlspecialchars(json_encode($template->data), ENT_QUOTES); ?>'); return false;"
-                            style="background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%); color: white; padding: 10px 18px;">
+                            style="background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%); color: var(--text-on-accent); padding: 10px 18px;">
                             📄 <?php echo htmlspecialchars($template->name); ?>
                         </button>
                     <?php endforeach; ?>
@@ -79,7 +79,7 @@
             </div>
 
             <button type="submit" class="btn"
-                style="background: #28a745; color: white; width: 100%; padding: 12px;">
+                style="background: var(--accent-success); color: var(--text-on-accent); width: 100%; padding: 12px;">
                 ✅ Add Document
             </button>
         </form>

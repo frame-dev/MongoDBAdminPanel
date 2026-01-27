@@ -4,8 +4,27 @@
  * Handles all POST requests for buttons throughout the application
  */
 
+require_once __DIR__ . '/database.php';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+
+    // Settings actions are handled in index.php; skip to avoid early redirect here.
+    $settingsActions = [
+        'save_display_settings',
+        'save_performance_settings',
+        'save_editor_settings',
+        'save_notification_settings',
+        'save_export_settings',
+        'save_security_settings',
+        'export_settings',
+        'import_settings',
+        'clear_cache',
+        'reset_settings'
+    ];
+    if (in_array($action, $settingsActions, true)) {
+        return;
+    }
     
     // ===== DOCUMENT OPERATIONS =====
     
@@ -542,7 +561,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     // Catch-all: If we processed a POST action but didn't redirect yet, redirect now to prevent form resubmission
-    if (isset($message)) {
+    if (isset($message) && $message !== '') {
         $_SESSION['message'] = $message;
         $_SESSION['messageType'] = $messageType ?? 'info';
         if (ob_get_length()) ob_clean();

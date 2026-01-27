@@ -2,28 +2,28 @@
     <h2 style="color: var(--text-primary); margin-bottom: 20px;">📊 Analytics & Statistics</h2>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
         <div
-            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px;">
+            style="background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%); color: var(--text-on-accent); padding: 20px; border-radius: 8px;">
             <p style="opacity: 0.9;">Total Documents</p>
             <p style="font-size: 32px; font-weight: bold; margin: 10px 0;">
                 <?php echo number_format($documentCount); ?>
             </p>
         </div>
         <div
-            style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 8px;">
+            style="background: linear-gradient(135deg, var(--gradient-pink-start) 0%, var(--gradient-pink-end) 100%); color: var(--text-on-accent); padding: 20px; border-radius: 8px;">
             <p style="opacity: 0.9;">Total Storage</p>
             <p style="font-size: 32px; font-weight: bold; margin: 10px 0;">
                 <?php echo number_format($totalSize / 1024 / 1024, 2); ?> MB
             </p>
         </div>
         <div
-            style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 8px;">
+            style="background: linear-gradient(135deg, var(--gradient-sky-start) 0%, var(--gradient-sky-end) 100%); color: var(--text-on-accent); padding: 20px; border-radius: 8px;">
             <p style="opacity: 0.9;">Avg Doc Size</p>
             <p style="font-size: 32px; font-weight: bold; margin: 10px 0;">
                 <?php echo number_format($avgDocSize / 1024, 2); ?> KB
             </p>
         </div>
         <div
-            style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 20px; border-radius: 8px;">
+            style="background: linear-gradient(135deg, var(--gradient-green-start) 0%, var(--gradient-green-end) 100%); color: var(--text-on-accent); padding: 20px; border-radius: 8px;">
             <p style="opacity: 0.9;">Connected Collections</p>
             <p style="font-size: 32px; font-weight: bold; margin: 10px 0;"><?php echo count($collectionNames); ?>
             </p>
@@ -78,7 +78,7 @@
                 </div>
                 <div style="display: flex; align-items: end;">
                     <button type="submit" class="btn"
-                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 20px; font-weight: 600;">📈
+                        style="background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%); color: var(--text-on-accent); padding: 10px 20px; font-weight: 600;">📈
                         Visualize</button>
                 </div>
             </div>
@@ -93,7 +93,7 @@
                         "<?php echo htmlspecialchars($vizData['field']); ?>"
                     </h4>
                     <span
-                        style="background: #667eea; color: white; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600;">Total:
+                        style="background: var(--accent-primary); color: var(--text-on-accent); padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600;">Total:
                         <?php echo $vizData['total']; ?></span>
                 </div>
                 <div style="display: grid; gap: 12px;">
@@ -107,12 +107,12 @@
                                 <span
                                     style="font-weight: 600; color: var(--text-primary); font-size: 15px;"><?php echo htmlspecialchars((string) $item['_id']); ?></span>
                                 <span
-                                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 14px; border-radius: 16px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 6px rgba(102,126,234,0.3);"><?php echo number_format($item['count']); ?></span>
+                                    style="background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%); color: var(--text-on-accent); padding: 6px 14px; border-radius: 16px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 6px rgba(102,126,234,0.3);"><?php echo number_format($item['count']); ?></span>
                             </div>
                             <div
                                 style="background: var(--table-border); height: 12px; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
                                 <div
-                                    style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); height: 100%; width: <?php echo $percentage; ?>%; transition: width 0.5s ease-out; box-shadow: 0 0 10px rgba(102,126,234,0.5);">
+                                    style="background: linear-gradient(90deg, var(--accent-primary) 0%, var(--accent-secondary) 100%); height: 100%; width: <?php echo $percentage; ?>%; transition: width 0.5s ease-out; box-shadow: 0 0 10px rgba(102,126,234,0.5);">
                                 </div>
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-top: 8px;">
@@ -161,7 +161,7 @@
                 </div>
                 <div style="display: flex; align-items: end;">
                     <button type="submit" class="btn"
-                        style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 10px 20px; font-weight: 600;">📅
+                        style="background: linear-gradient(135deg, var(--gradient-pink-start) 0%, var(--gradient-pink-end) 100%); color: var(--text-on-accent); padding: 10px 20px; font-weight: 600;">📅
                         Analyze</button>
                 </div>
             </div>
@@ -177,7 +177,7 @@
                     <?php foreach ($tsData['results'] as $item): ?>
                         <div style="background: var(--card-bg); padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
                             <span style="font-weight: 600; color: var(--text-primary);"><?php echo htmlspecialchars($item['_id']); ?></span>
-                            <span style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 6px 14px; border-radius: 16px; font-weight: bold;"><?php echo number_format($item['count']); ?> docs</span>
+                            <span style="background: linear-gradient(135deg, var(--gradient-pink-start) 0%, var(--gradient-pink-end) 100%); color: var(--text-on-accent); padding: 6px 14px; border-radius: 16px; font-weight: bold;"><?php echo number_format($item['count']); ?> docs</span>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -209,7 +209,7 @@
                 </div>
                 <div style="display: flex; align-items: end;">
                     <button type="submit" class="btn"
-                        style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 10px 20px; font-weight: 600;">🔗
+                        style="background: linear-gradient(135deg, var(--gradient-sky-start) 0%, var(--gradient-sky-end) 100%); color: var(--text-on-accent); padding: 10px 20px; font-weight: 600;">🔗
                         Correlate</button>
                 </div>
             </div>
@@ -220,18 +220,18 @@
             <div style="padding: 25px; background: var(--table-header-bg); border-radius: 10px; margin-top: 20px; border: 1px solid var(--table-border);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h4 style="color: var(--text-primary);">Correlation: "<?php echo htmlspecialchars($corrData['field1']); ?>" × "<?php echo htmlspecialchars($corrData['field2']); ?>"</h4>
-                    <span style="background: #4facfe; color: white; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600;"><?php echo count($corrData['results']); ?> combinations</span>
+                    <span style="background: var(--gradient-sky-start); color: var(--text-on-accent); padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600;"><?php echo count($corrData['results']); ?> combinations</span>
                 </div>
                 <div style="display: grid; gap: 10px;">
                     <?php foreach ($corrData['results'] as $item): ?>
                         <div style="background: var(--card-bg); padding: 15px; border-radius: 8px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
-                                    <span style="font-weight: 600; color: #667eea;"><?php echo htmlspecialchars(json_encode($item['_id']['field1'])); ?></span>
+                                    <span style="font-weight: 600; color: var(--accent-primary);"><?php echo htmlspecialchars(json_encode($item['_id']['field1'])); ?></span>
                                     <span style="color: var(--text-secondary); margin: 0 8px;">×</span>
-                                    <span style="font-weight: 600; color: #f5576c;"><?php echo htmlspecialchars(json_encode($item['_id']['field2'])); ?></span>
+                                    <span style="font-weight: 600; color: var(--gradient-pink-end);"><?php echo htmlspecialchars(json_encode($item['_id']['field2'])); ?></span>
                                 </div>
-                                <span style="background: #17a2b8; color: white; padding: 6px 12px; border-radius: 12px; font-size: 13px; font-weight: bold;"><?php echo number_format($item['count']); ?> occurrences</span>
+                                <span style="background: var(--accent-info); color: var(--text-on-accent); padding: 6px 12px; border-radius: 12px; font-size: 13px; font-weight: bold;"><?php echo number_format($item['count']); ?> occurrences</span>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -276,21 +276,21 @@
         ?>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
             <div
-                style="background: linear-gradient(135deg, #43e97b15 0%, #38f9d715 100%); padding: 20px; border-radius: 10px; border-left: 4px solid #43e97b;">
+                style="background: linear-gradient(135deg, var(--gradient-green-start)15 0%, var(--gradient-green-end)15 100%); padding: 20px; border-radius: 10px; border-left: 4px solid var(--gradient-green-start);">
                 <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">Data Completeness</p>
-                <p style="font-size: 32px; font-weight: bold; color: #43e97b; margin-bottom: 8px;">
+                <p style="font-size: 32px; font-weight: bold; color: var(--gradient-green-start); margin-bottom: 8px;">
                     <?php echo number_format($completeness, 1); ?>%
                 </p>
                 <div style="background: var(--table-border); height: 8px; border-radius: 4px; overflow: hidden;">
                     <div
-                        style="background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%); height: 100%; width: <?php echo $completeness; ?>%; transition: width 0.5s;">
+                        style="background: linear-gradient(90deg, var(--gradient-green-start) 0%, var(--gradient-green-end) 100%); height: 100%; width: <?php echo $completeness; ?>%; transition: width 0.5s;">
                     </div>
                 </div>
             </div>
             <div
-                style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); padding: 20px; border-radius: 10px; border-left: 4px solid #667eea;">
+                style="background: linear-gradient(135deg, var(--accent-primary)15 0%, var(--accent-secondary)15 100%); padding: 20px; border-radius: 10px; border-left: 4px solid var(--accent-primary);">
                 <p style="color: var(--text-secondary); font-size: 13px;">Empty Documents</p>
-                <p style="font-size: 32px; font-weight: bold; color: #667eea;">
+                <p style="font-size: 32px; font-weight: bold; color: var(--accent-primary);">
                     <?php echo number_format($qualityMetrics['empty_docs']); ?>
                 </p>
                 <p style="color: var(--text-muted); font-size: 12px;">Out of
@@ -298,22 +298,22 @@
                 </p>
             </div>
             <div
-                style="background: linear-gradient(135deg, #f093fb15 0%, #f5576c15 100%); padding: 20px; border-radius: 10px; border-left: 4px solid #f5576c;">
+                style="background: linear-gradient(135deg, var(--gradient-pink-start)15 0%, var(--gradient-pink-end)15 100%); padding: 20px; border-radius: 10px; border-left: 4px solid var(--gradient-pink-end);">
                 <p style="color: var(--text-secondary); font-size: 13px;">Null/Empty Fields</p>
-                <p style="font-size: 32px; font-weight: bold; color: #f5576c;">
+                <p style="font-size: 32px; font-weight: bold; color: var(--gradient-pink-end);">
                     <?php echo number_format($qualityMetrics['null_fields']); ?>
                 </p>
                 <p style="color: var(--text-muted); font-size: 12px;">Fields with null/empty values</p>
             </div>
             <div
-                style="background: linear-gradient(135deg, #fa709a15 0%, #fee14015 100%); padding: 20px; border-radius: 10px; border-left: 4px solid #fa709a;">
+                style="background: linear-gradient(135deg, var(--gradient-sunset-start)15 0%, var(--gradient-sunset-end)15 100%); padding: 20px; border-radius: 10px; border-left: 4px solid var(--gradient-sunset-start);">
                 <p style="color: var(--text-secondary); font-size: 13px;">Avg Fields per Doc</p>
                 <?php
                 $avgFields = count($qualitySample) > 0 ? array_sum(array_map(function ($d) {
                     return count(json_decode(json_encode($d), true));
                 }, $qualitySample)) / count($qualitySample) : 0;
                 ?>
-                <p style="font-size: 32px; font-weight: bold; color: #fa709a;">
+                <p style="font-size: 32px; font-weight: bold; color: var(--gradient-sunset-start);">
                     <?php echo number_format($avgFields, 1); ?>
                 </p>
                 <p style="color: var(--text-muted); font-size: 12px;">Average field count</p>
@@ -359,7 +359,7 @@
                 </div>
                 <div style="display: flex; align-items: end;">
                     <button type="submit" class="btn"
-                        style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 10px 20px; font-weight: 600;">🔝
+                        style="background: linear-gradient(135deg, var(--gradient-sunset-start) 0%, var(--gradient-sunset-end) 100%); color: var(--text-on-accent); padding: 10px 20px; font-weight: 600;">🔝
                         Analyze</button>
                 </div>
             </div>
@@ -370,16 +370,16 @@
             <div style="padding: 25px; background: var(--table-header-bg); border-radius: 10px; margin-top: 20px; border: 1px solid var(--table-border);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h4 style="color: var(--text-primary);">Top Values: "<?php echo htmlspecialchars($topData['field']); ?>"</h4>
-                    <span style="background: #fa709a; color: white; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600;"><?php echo count($topData['results']); ?> values</span>
+                    <span style="background: var(--gradient-sunset-start); color: var(--text-on-accent); padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600;"><?php echo count($topData['results']); ?> values</span>
                 </div>
                 <div style="display: grid; gap: 12px;">
                     <?php foreach ($topData['results'] as $idx => $item): ?>
                         <div style="background: var(--card-bg); padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
                             <div style="display: flex; align-items: center; gap: 12px;">
-                                <span style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 6px 12px; border-radius: 50%; font-weight: bold; font-size: 14px; min-width: 36px; text-align: center;"><?php echo $idx + 1; ?></span>
+                                <span style="background: linear-gradient(135deg, var(--gradient-sunset-start) 0%, var(--gradient-sunset-end) 100%); color: var(--text-on-accent); padding: 6px 12px; border-radius: 50%; font-weight: bold; font-size: 14px; min-width: 36px; text-align: center;"><?php echo $idx + 1; ?></span>
                                 <span style="font-weight: 600; color: var(--text-primary); font-size: 15px;"><?php echo htmlspecialchars(json_encode($item['_id'])); ?></span>
                             </div>
-                            <span style="background: #28a745; color: white; padding: 8px 16px; border-radius: 16px; font-weight: bold;"><?php echo number_format($item['count']); ?> docs</span>
+                            <span style="background: var(--accent-success); color: var(--text-on-accent); padding: 8px 16px; border-radius: 16px; font-weight: bold;"><?php echo number_format($item['count']); ?> docs</span>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -427,7 +427,7 @@
                 </div>
                 <div style="display: flex; align-items: end;">
                     <button type="submit" class="btn"
-                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 20px; font-weight: 600;">⚖️
+                        style="background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%); color: var(--text-on-accent); padding: 10px 20px; font-weight: 600;">⚖️
                         Compare</button>
                 </div>
             </div>
@@ -438,35 +438,35 @@
             <div style="padding: 25px; background: var(--table-header-bg); border-radius: 10px; margin-top: 20px; border: 1px solid var(--table-border);">
                 <h4 style="color: var(--text-primary); margin-bottom: 20px;">⚖️ Collection Comparison Results</h4>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); padding: 20px; border-radius: 10px; border-left: 4px solid #667eea;">
-                        <h5 style="color: #667eea; margin-bottom: 15px; font-size: 18px;">📦 <?php echo htmlspecialchars($compData['collection1']['name']); ?></h5>
+                    <div style="background: linear-gradient(135deg, var(--accent-primary)15 0%, var(--accent-secondary)15 100%); padding: 20px; border-radius: 10px; border-left: 4px solid var(--accent-primary);">
+                        <h5 style="color: var(--accent-primary); margin-bottom: 15px; font-size: 18px;">📦 <?php echo htmlspecialchars($compData['collection1']['name']); ?></h5>
                         <div style="display: grid; gap: 10px;">
-                            <div style="display: flex; justify-content: space-between; padding: 8px; background: white; border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; padding: 8px; background: var(--card-bg); border-radius: 6px;">
                                 <span style="color: var(--text-secondary);">Documents:</span>
                                 <span style="font-weight: bold; color: var(--text-primary);"><?php echo number_format($compData['collection1']['count']); ?></span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; padding: 8px; background: white; border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; padding: 8px; background: var(--card-bg); border-radius: 6px;">
                                 <span style="color: var(--text-secondary);">Size:</span>
                                 <span style="font-weight: bold; color: var(--text-primary);"><?php echo number_format($compData['collection1']['size'] / 1024, 2); ?> KB</span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; padding: 8px; background: white; border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; padding: 8px; background: var(--card-bg); border-radius: 6px;">
                                 <span style="color: var(--text-secondary);">Avg Doc Size:</span>
                                 <span style="font-weight: bold; color: var(--text-primary);"><?php echo number_format($compData['collection1']['avgSize'], 2); ?> bytes</span>
                             </div>
                         </div>
                     </div>
-                    <div style="background: linear-gradient(135deg, #f093fb15 0%, #f5576c15 100%); padding: 20px; border-radius: 10px; border-left: 4px solid #f5576c;">
-                        <h5 style="color: #f5576c; margin-bottom: 15px; font-size: 18px;">📦 <?php echo htmlspecialchars($compData['collection2']['name']); ?></h5>
+                    <div style="background: linear-gradient(135deg, var(--gradient-pink-start)15 0%, var(--gradient-pink-end)15 100%); padding: 20px; border-radius: 10px; border-left: 4px solid var(--gradient-pink-end);">
+                        <h5 style="color: var(--gradient-pink-end); margin-bottom: 15px; font-size: 18px;">📦 <?php echo htmlspecialchars($compData['collection2']['name']); ?></h5>
                         <div style="display: grid; gap: 10px;">
-                            <div style="display: flex; justify-content: space-between; padding: 8px; background: white; border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; padding: 8px; background: var(--card-bg); border-radius: 6px;">
                                 <span style="color: var(--text-secondary);">Documents:</span>
                                 <span style="font-weight: bold; color: var(--text-primary);"><?php echo number_format($compData['collection2']['count']); ?></span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; padding: 8px; background: white; border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; padding: 8px; background: var(--card-bg); border-radius: 6px;">
                                 <span style="color: var(--text-secondary);">Size:</span>
                                 <span style="font-weight: bold; color: var(--text-primary);"><?php echo number_format($compData['collection2']['size'] / 1024, 2); ?> KB</span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; padding: 8px; background: white; border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; padding: 8px; background: var(--card-bg); border-radius: 6px;">
                                 <span style="color: var(--text-secondary);">Avg Doc Size:</span>
                                 <span style="font-weight: bold; color: var(--text-primary);"><?php echo number_format($compData['collection2']['avgSize'], 2); ?> bytes</span>
                             </div>
@@ -480,7 +480,7 @@
 
     <!-- Export Analytics Report -->
     <div
-        style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); padding: 20px; border-radius: 12px; margin-top: 20px; border-left: 4px solid #667eea;">
+        style="background: linear-gradient(135deg, var(--accent-primary)15 0%, var(--accent-secondary)15 100%); padding: 20px; border-radius: 12px; margin-top: 20px; border-left: 4px solid var(--accent-primary);">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <h4 style="color: var(--text-primary); margin-bottom: 8px;">📄 Generate Analytics Report</h4>
@@ -493,7 +493,7 @@
                 <input type="hidden" name="collection" value="<?php echo htmlspecialchars($collectionName); ?>">
                 <input type="hidden" name="action" value="exportanalytics">
                 <button type="submit" class="btn"
-                    style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 12px 24px; font-weight: 600; white-space: nowrap;">
+                    style="background: linear-gradient(135deg, var(--gradient-green-start) 0%, var(--gradient-green-end) 100%); color: var(--text-on-accent); padding: 12px 24px; font-weight: 600; white-space: nowrap;">
                     📥 Export Report
                 </button>
             </form>

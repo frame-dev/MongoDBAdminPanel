@@ -93,6 +93,23 @@ if ($jsonFilterRaw !== '') {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
+    // Settings actions are handled in index.php; skip to avoid early redirect here.
+    $settingsActions = [
+        'save_display_settings',
+        'save_performance_settings',
+        'save_editor_settings',
+        'save_notification_settings',
+        'save_export_settings',
+        'save_security_settings',
+        'export_settings',
+        'import_settings',
+        'clear_cache',
+        'reset_settings'
+    ];
+    if (in_array($action, $settingsActions, true)) {
+        return;
+    }
+
     // Include additional handlers now that $action is defined
     if (file_exists(__DIR__ . '/settings_handlers.php')) {
         include __DIR__ . '/settings_handlers.php';
@@ -143,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'bulk_delete_selected',
         'bulk_update_selected'
     ];
-    if (in_array($action, $dangerousActions)) {
+    if (in_array($action, $dangerousActions) && getSetting('csrf_enabled', true)) {
         $csrfToken = $_POST['csrf_token'] ?? '';
         if (!verifyCSRFToken($csrfToken)) {
             $message = 'Security error: Invalid CSRF token';
@@ -159,11 +176,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $rateLimitRequests = max(10, min(1000, $rateLimitRequests));
     $rateLimitLockout = max(30, min(3600, $rateLimitLockout));
 
-    if (!checkRateLimit('post_action', $rateLimitRequests, $rateLimitLockout)) {
-        $message = 'Too many requests. Please wait a moment.';
-        $messageType = 'error';
-        logSecurityEvent('rate_limit_exceeded', ['action' => $action]);
-        $action = '';
+    if (getSetting('rate_limit_enabled', true)) {
+        if (!checkRateLimit('post_action', $rateLimitRequests, $rateLimitLockout)) {
+            $message = 'Too many requests. Please wait a moment.';
+            $messageType = 'error';
+            logSecurityEvent('rate_limit_exceeded', ['action' => $action]);
+            $action = '';
+        }
     }
 
     if ($action === 'savetemplate') {
@@ -339,6 +358,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $messageType = 'error';
             }
         }
+    }
 
         if ($action === 'delete') {
             try {
@@ -528,6 +548,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $timestampExports = (bool) getSetting('timestamp_exports', true);
                 $compressExports = (bool) getSetting('compress_exports', false);
                 $includeMetadata = (bool) getSetting('include_metadata', true);
+                $delimiterSetting = getSetting('csv_delimiter', ';');
+                $includeCsvBom = (bool) getSetting('csv_include_bom', true);
 
                 $baseFile = $exportPrefix . '_' . $collectionName;
                 if ($timestampExports) {
@@ -595,7 +617,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['message'] = "Collection '{$newCollectionName}' created successfully!";
                 $_SESSION['messageType'] = 'success';
 
-                header('Location: ' . $_SERVER['PHP_SELF']);
+                $redirectUrl = $_SERVER['PHP_SELF'] . '?collection=' . urlencode($newCollectionName);
+                $redirectUrl .= (strpos($redirectUrl, '?') === false ? '?' : '&') . 'tab=tools';
+                header('Location: ' . $redirectUrl);
                 exit;
             } catch (Exception $e) {
                 $message = 'Error: ' . $e->getMessage();
@@ -637,7 +661,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $_SESSION['message'] = "Collection '{$collectionToDrop}' dropped successfully!";
                 $_SESSION['messageType'] = 'success';
-                header('Location: ' . $_SERVER['PHP_SELF']);
+                $redirectUrl = $_SERVER['PHP_SELF'];
+                $redirectCollection = $_SESSION['mongo_connection']['collection'] ?? '';
+                if ($redirectCollection !== '') {
+                    $redirectUrl .= '?collection=' . urlencode($redirectCollection);
+                }
+                $redirectUrl .= (strpos($redirectUrl, '?') === false ? '?' : '&') . 'tab=tools';
+                header('Location: ' . $redirectUrl);
                 exit;
             } catch (Exception $e) {
                 $message = 'Error: ' . $e->getMessage();
@@ -671,7 +701,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $_SESSION['message'] = "Collection renamed from '{$oldName}' to '{$newName}'!";
                 $_SESSION['messageType'] = 'success';
-                header('Location: ' . $_SERVER['PHP_SELF']);
+                $redirectUrl = $_SERVER['PHP_SELF'] . '?collection=' . urlencode($newName);
+                $redirectUrl .= (strpos($redirectUrl, '?') === false ? '?' : '&') . 'tab=tools';
+                header('Location: ' . $redirectUrl);
                 exit;
             } catch (Exception $e) {
                 $message = 'Error: ' . $e->getMessage();
@@ -720,7 +752,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $_SESSION['message'] = "Collection '{$sourceCollection}' cloned to '{$targetCollection}' with " . count($documents) . " documents!";
                 $_SESSION['messageType'] = 'success';
-                header('Location: ' . $_SERVER['PHP_SELF']);
+                $redirectUrl = $_SERVER['PHP_SELF'] . '?collection=' . urlencode($targetCollection);
+                $redirectUrl .= (strpos($redirectUrl, '?') === false ? '?' : '&') . 'tab=tools';
+                header('Location: ' . $redirectUrl);
                 exit;
             } catch (Exception $e) {
                 $message = 'Error: ' . $e->getMessage();
@@ -731,7 +765,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'create_index') {
             try {
                 $indexField = sanitizeInput($_POST['index_field'] ?? '');
-                $indexOrder = (int) ($_POST['index_order'] ?? 1);
+                $indexOrder = (int) ($_POST['index_order'] ?? $_POST['index_type'] ?? 1);
                 $indexUnique = isset($_POST['index_unique']) && $_POST['index_unique'] === '1';
 
                 if (!$indexField) {
@@ -751,7 +785,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $_SESSION['message'] = "Index created on field '{$indexField}'!";
                 $_SESSION['messageType'] = 'success';
-                header('Location: ' . $_SERVER['PHP_SELF']);
+                $redirectUrl = $_SERVER['PHP_SELF'];
+                if (isset($collectionName) && $collectionName) {
+                    $redirectUrl .= '?collection=' . urlencode($collectionName);
+                }
+                $redirectUrl .= (strpos($redirectUrl, '?') === false ? '?' : '&') . 'tab=tools';
+                header('Location: ' . $redirectUrl);
                 exit;
             } catch (Exception $e) {
                 $message = 'Error: ' . $e->getMessage();
@@ -761,7 +800,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($action === 'drop_index') {
             try {
-                $indexName = sanitizeInput($_POST['index_name'] ?? '');
+                $indexName = sanitizeInput($_POST['index_name'] ?? $_POST['drop_index_name'] ?? '');
 
                 if (!$indexName) {
                     throw new Exception('Index name is required');
@@ -775,7 +814,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $_SESSION['message'] = "Index '{$indexName}' dropped successfully!";
                 $_SESSION['messageType'] = 'success';
-                header('Location: ' . $_SERVER['PHP_SELF']);
+                $redirectUrl = $_SERVER['PHP_SELF'];
+                if (isset($collectionName) && $collectionName) {
+                    $redirectUrl .= '?collection=' . urlencode($collectionName);
+                }
+                $redirectUrl .= (strpos($redirectUrl, '?') === false ? '?' : '&') . 'tab=tools';
+                header('Location: ' . $redirectUrl);
                 exit;
             } catch (Exception $e) {
                 $message = 'Error: ' . $e->getMessage();
@@ -807,10 +851,351 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $_SESSION['message'] = "Backup created: '{$backupName}' with " . count($documents) . " documents!";
                 $_SESSION['messageType'] = 'success';
-                header('Location: ' . $_SERVER['PHP_SELF']);
+                $redirectUrl = $_SERVER['PHP_SELF'];
+                if (isset($collectionName) && $collectionName) {
+                    $redirectUrl .= '?collection=' . urlencode($collectionName);
+                }
+                $redirectUrl .= (strpos($redirectUrl, '?') === false ? '?' : '&') . 'tab=tools';
+                header('Location: ' . $redirectUrl);
                 exit;
             } catch (Exception $e) {
                 $message = 'Error: ' . $e->getMessage();
+                $messageType = 'error';
+            }
+        }
+
+        if ($action === 'migrate_collection') {
+            try {
+                $sourceCollection = sanitizeInput($_POST['source_collection'] ?? $_POST['clone_source'] ?? '');
+                $targetCollection = sanitizeInput($_POST['target_collection'] ?? $_POST['clone_target'] ?? '');
+                $filterJson = trim((string) ($_POST['migrate_filter'] ?? ''));
+                $copyMode = isset($_POST['migrate_copy']);
+
+                if (!$sourceCollection || !$targetCollection) {
+                    throw new Exception('Source and target collections are required');
+                }
+
+                if (!validateCollectionName($sourceCollection) || !validateCollectionName($targetCollection)) {
+                    throw new Exception('Invalid collection name');
+                }
+
+                $filter = [];
+                if ($filterJson !== '') {
+                    if (!validateJSON($filterJson)) {
+                        throw new Exception('Invalid JSON filter');
+                    }
+                    $filter = sanitizeMongoQuery(json_decode($filterJson, true));
+                }
+
+                $existingCollections = [];
+                foreach ($database->listCollections() as $collectionInfo) {
+                    $existingCollections[] = $collectionInfo->getName();
+                }
+                if (!in_array($targetCollection, $existingCollections, true)) {
+                    $database->createCollection($targetCollection);
+                }
+
+                $sourceColl = $database->getCollection($sourceCollection);
+                $targetColl = $database->getCollection($targetCollection);
+
+                $inserted = 0;
+                $failed = 0;
+                $idsToDelete = [];
+
+                $cursor = $sourceColl->find($filter);
+                foreach ($cursor as $doc) {
+                    try {
+                        $targetColl->insertOne($doc);
+                        $inserted++;
+                        if (!$copyMode && isset($doc['_id'])) {
+                            $idsToDelete[] = $doc['_id'];
+                        }
+                    } catch (Exception $e) {
+                        $failed++;
+                    }
+                }
+
+                if (!$copyMode && !empty($idsToDelete)) {
+                    $sourceColl->deleteMany(['_id' => ['$in' => $idsToDelete]]);
+                }
+
+                $actionLabel = $copyMode ? 'Copied' : 'Moved';
+                $message = $actionLabel . " {$inserted} document(s) from '{$sourceCollection}' to '{$targetCollection}'.";
+                if ($failed > 0) {
+                    $message .= " {$failed} document(s) failed due to duplicates or errors.";
+                    $messageType = 'warning';
+                } else {
+                    $messageType = 'success';
+                }
+            } catch (Exception $e) {
+                $message = 'Error: ' . $e->getMessage();
+                $messageType = 'error';
+            }
+
+            if (isset($message)) {
+                $_SESSION['message'] = $message;
+                $_SESSION['messageType'] = $messageType ?? 'info';
+                $redirectUrl = $_SERVER['PHP_SELF'];
+                if (isset($collectionName) && $collectionName) {
+                    $redirectUrl .= '?collection=' . urlencode($collectionName);
+                }
+                $redirectUrl .= (strpos($redirectUrl, '?') === false ? '?' : '&') . 'tab=tools';
+                header('Location: ' . $redirectUrl);
+                exit;
+            }
+        }
+
+        if ($action === 'find_duplicates') {
+            try {
+                $fieldName = sanitizeInput($_POST['dup_field'] ?? '');
+                if (!$fieldName || !validateFieldName($fieldName)) {
+                    throw new Exception('Invalid field name');
+                }
+
+                $pipeline = [
+                    ['$group' => ['_id' => '$' . $fieldName, 'count' => ['$sum' => 1], 'ids' => ['$push' => '$_id']]],
+                    ['$match' => ['count' => ['$gt' => 1]]],
+                    ['$sort' => ['count' => -1]],
+                    ['$limit' => 200]
+                ];
+
+                $results = $collection->aggregate($pipeline)->toArray();
+                $_SESSION['duplicate_results'] = [
+                    'field' => $fieldName,
+                    'total' => count($results),
+                    'results' => $results
+                ];
+
+                $message = 'Duplicate scan complete.';
+                $messageType = count($results) > 0 ? 'warning' : 'success';
+            } catch (Exception $e) {
+                $message = 'Error: ' . $e->getMessage();
+                $messageType = 'error';
+            }
+
+            if (isset($message)) {
+                $_SESSION['message'] = $message;
+                $_SESSION['messageType'] = $messageType ?? 'info';
+                $redirectUrl = $_SERVER['PHP_SELF'];
+                if (isset($collectionName) && $collectionName) {
+                    $redirectUrl .= '?collection=' . urlencode($collectionName);
+                }
+                $redirectUrl .= (strpos($redirectUrl, '?') === false ? '?' : '&') . 'tab=tools';
+                header('Location: ' . $redirectUrl);
+                exit;
+            }
+        }
+
+        if ($action === 'add_validation') {
+            try {
+                $schemaJson = $_POST['validation_schema'] ?? '';
+                $validationLevel = $_POST['validation_level'] ?? 'strict';
+                $validationAction = $_POST['validation_action'] ?? 'error';
+
+                if (!validateJSON($schemaJson)) {
+                    throw new Exception('Invalid JSON schema');
+                }
+
+                $schema = json_decode($schemaJson, true);
+                if (json_last_error() !== JSON_ERROR_NONE || !is_array($schema)) {
+                    throw new Exception('Validation schema must be a JSON object');
+                }
+
+                $allowedLevels = ['strict', 'moderate', 'off'];
+                $allowedActions = ['error', 'warn'];
+                if (!in_array($validationLevel, $allowedLevels, true)) {
+                    $validationLevel = 'strict';
+                }
+                if (!in_array($validationAction, $allowedActions, true)) {
+                    $validationAction = 'error';
+                }
+
+                $database->command([
+                    'collMod' => $collectionName,
+                    'validator' => $schema,
+                    'validationLevel' => $validationLevel,
+                    'validationAction' => $validationAction
+                ]);
+
+                $message = 'Validation schema applied successfully.';
+                $messageType = 'success';
+            } catch (Exception $e) {
+                $message = 'Error: ' . $e->getMessage();
+                $messageType = 'error';
+            }
+
+            if (isset($message)) {
+                $_SESSION['message'] = $message;
+                $_SESSION['messageType'] = $messageType ?? 'info';
+                $redirectUrl = $_SERVER['PHP_SELF'];
+                if (isset($collectionName) && $collectionName) {
+                    $redirectUrl .= '?collection=' . urlencode($collectionName);
+                }
+                $redirectUrl .= (strpos($redirectUrl, '?') === false ? '?' : '&') . 'tab=tools';
+                header('Location: ' . $redirectUrl);
+                exit;
+            }
+        }
+
+        if ($action === 'compare_collections') {
+            try {
+                $coll1Name = sanitizeInput($_POST['compare_coll1'] ?? '');
+                $coll2Name = sanitizeInput($_POST['compare_coll2'] ?? '');
+                $fieldName = sanitizeInput($_POST['compare_field'] ?? '');
+
+                if (!$coll1Name || !$coll2Name) {
+                    throw new Exception('Both collections must be selected');
+                }
+                if ($coll1Name === $coll2Name) {
+                    throw new Exception('Please select different collections');
+                }
+                if (!$fieldName || !validateFieldName($fieldName)) {
+                    throw new Exception('Invalid field name');
+                }
+
+                $coll1 = $database->selectCollection($coll1Name);
+                $coll2 = $database->selectCollection($coll2Name);
+
+                $vals1 = $coll1->distinct($fieldName);
+                $vals2 = $coll2->distinct($fieldName);
+
+                $set1 = [];
+                foreach ($vals1 as $value) {
+                    $key = json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                    $set1[$key] = true;
+                }
+                $set2 = [];
+                foreach ($vals2 as $value) {
+                    $key = json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                    $set2[$key] = true;
+                }
+
+                $common = count(array_intersect_key($set1, $set2));
+                $unique1 = count($set1) - $common;
+                $unique2 = count($set2) - $common;
+
+                $_SESSION['compare_results'] = [
+                    'coll1' => $coll1Name,
+                    'coll2' => $coll2Name,
+                    'stats' => [
+                        'common' => $common,
+                        'unique_1' => $unique1,
+                        'unique_2' => $unique2
+                    ]
+                ];
+
+                $message = 'Collection comparison completed.';
+                $messageType = 'success';
+            } catch (Exception $e) {
+                $message = 'Comparison error: ' . $e->getMessage();
+                $messageType = 'error';
+            }
+
+            if (isset($message)) {
+                $_SESSION['message'] = $message;
+                $_SESSION['messageType'] = $messageType ?? 'info';
+                $redirectUrl = $_SERVER['PHP_SELF'];
+                if (isset($collectionName) && $collectionName) {
+                    $redirectUrl .= '?collection=' . urlencode($collectionName);
+                }
+                $redirectUrl .= (strpos($redirectUrl, '?') === false ? '?' : '&') . 'tab=tools';
+                header('Location: ' . $redirectUrl);
+                exit;
+            }
+        }
+
+        if ($action === 'export_collection_data') {
+            try {
+                $exportFormat = $_POST['export_format'] ?? 'json';
+                $filterJson = trim((string) ($_POST['export_filter'] ?? ''));
+                $filterData = [];
+
+                if ($filterJson !== '') {
+                    if (!validateJSON($filterJson)) {
+                        throw new Exception('Invalid JSON filter');
+                    }
+                    $filterData = sanitizeMongoQuery(json_decode($filterJson, true));
+                }
+
+                $documents = $collection->find($filterData, [
+                    'limit' => $maxResultsSetting,
+                    'maxTimeMS' => $queryTimeoutMs
+                ]);
+                $rows = iterator_to_array($documents);
+                $data = array_map(fn($doc) => json_decode(json_encode($doc), true), $rows);
+
+                $baseFile = 'collection_export_' . $collectionName . '_' . date('Y-m-d_H-i-s');
+                $includeMetadata = (bool) getSetting('include_metadata', true);
+                $includeCsvBom = (bool) getSetting('csv_include_bom', true);
+                $delimiterSetting = getSetting('csv_delimiter', ';');
+
+                if ($exportFormat === 'csv') {
+                    if (empty($data)) {
+                        throw new Exception('No documents to export');
+                    }
+
+                    $allKeys = [];
+                    foreach ($data as $row) {
+                        $allKeys = array_values(array_unique(array_merge($allKeys, array_keys($row))));
+                    }
+
+                    $delimiter = ';';
+                    if ($delimiterSetting === ',') {
+                        $delimiter = ',';
+                    } elseif ($delimiterSetting === 'tab') {
+                        $delimiter = "\t";
+                    } elseif ($delimiterSetting === '|') {
+                        $delimiter = '|';
+                    }
+
+                    $output = fopen('php://temp', 'r+');
+                    if ($includeCsvBom) {
+                        fwrite($output, "\xEF\xBB\xBF");
+                    }
+
+                    if ($includeMetadata) {
+                        fwrite($output, '# Exported at: ' . date('c') . PHP_EOL);
+                        fwrite($output, '# Collection: ' . $collectionName . PHP_EOL);
+                        fwrite($output, '# Count: ' . count($data) . PHP_EOL);
+                    }
+
+                    fputcsv($output, $allKeys, $delimiter, '"', '\\');
+                    foreach ($data as $row) {
+                        $line = [];
+                        foreach ($allKeys as $key) {
+                            $value = $row[$key] ?? '';
+                            if (is_array($value) || is_object($value)) {
+                                $value = json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                            }
+                            $line[] = $value;
+                        }
+                        fputcsv($output, $line, $delimiter, '"', '\\');
+                    }
+                    rewind($output);
+                    $csvOutput = stream_get_contents($output);
+                    fclose($output);
+
+                    header('Content-Type: text/csv; charset=UTF-8');
+                    header('Content-Disposition: attachment; filename="' . $baseFile . '.csv"');
+                    echo $csvOutput;
+                    exit;
+                }
+
+                $payload = $includeMetadata ? [
+                    'metadata' => [
+                        'collection' => $collectionName,
+                        'exported_at' => date('c'),
+                        'count' => count($data)
+                    ],
+                    'data' => $data
+                ] : $data;
+
+                header('Content-Type: application/json; charset=utf-8');
+                header('Content-Disposition: attachment; filename="' . $baseFile . '.json"');
+                echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                exit;
+            } catch (Exception $e) {
+                $message = 'Export error: ' . $e->getMessage();
                 $messageType = 'error';
             }
         }
@@ -1051,13 +1436,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 $delimiter = ';'; // am kompatibelsten (Excel DE)
+                if ($delimiterSetting === ',') {
+                    $delimiter = ',';
+                } elseif ($delimiterSetting === 'tab') {
+                    $delimiter = "\t";
+                } elseif ($delimiterSetting === '|') {
+                    $delimiter = '|';
+                }
                 $enclosure = '"';
                 $escape = '\\';
 
                 $output = fopen('php://temp', 'r+');
 
-                // UTF-8 BOM für Excel
-                fwrite($output, "\xEF\xBB\xBF");
+                // UTF-8 BOM für Excel (optional)
+                if ($includeCsvBom) {
+                    fwrite($output, "\xEF\xBB\xBF");
+                }
 
                 if ($includeMetadata) {
                     fwrite($output, '# Exported at: ' . date('c') . PHP_EOL);
@@ -1585,4 +1979,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     }
-}

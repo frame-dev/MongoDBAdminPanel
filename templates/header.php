@@ -166,8 +166,131 @@ require_once 'config/security.php';
             }
         }
         
-        // NOTE: viewDocument, editDocument, closeViewModal, etc. are now defined in index.php Browse Tab section
-        // These old query builder functions have been moved to the Browse Tab implementation
+        // Fallbacks for Browse tab modal handlers (in case index.php script does not load)
+        function getDocDataById(docId) {
+            const row = document.querySelector(`tr[data-doc-id="${docId}"]`) || document.querySelector(`.document-card[data-doc-id="${docId}"]`);
+            if (!row || !row.dataset.json) {
+                return null;
+            }
+            try {
+                return JSON.parse(row.dataset.json);
+            } catch (e) {
+                console.error('Failed to parse document JSON', e);
+                return null;
+            }
+        }
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('active');
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        if (typeof window.copyToClipboard !== 'function') {
+            window.copyToClipboard = function (text) {
+                const payload = typeof text === 'string' ? text : (document.getElementById('viewJsonContent')?.textContent || '');
+                if (!payload) {
+                    return;
+                }
+                navigator.clipboard.writeText(payload).then(() => {
+                    alert('Copied to clipboard!');
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                });
+            };
+        }
+
+        if (typeof window.viewDocument !== 'function') {
+            window.viewDocument = function (docId, event) {
+                if (event) event.preventDefault();
+                const doc = getDocDataById(docId);
+                if (!doc) {
+                    alert('Document not found');
+                    return;
+                }
+                const formatted = JSON.stringify(doc, null, 2);
+                const viewJson = document.getElementById('viewJsonContent');
+                if (viewJson) {
+                    viewJson.textContent = formatted;
+                    if (window.hljs) {
+                        window.hljs.highlightElement(viewJson);
+                    }
+                }
+                const editDocId = document.getElementById('editFromViewDocId');
+                const editPreview = document.getElementById('editFromViewJsonPreview');
+                const editTextarea = document.getElementById('editFromViewJsonData');
+                if (editDocId) editDocId.value = docId;
+                if (editPreview) editPreview.textContent = formatted;
+                if (editTextarea) editTextarea.value = formatted;
+                window._currentDocId = docId;
+                window._currentDocJson = formatted;
+                openModal('viewModal');
+            };
+        }
+
+        if (typeof window.editDocument !== 'function') {
+            window.editDocument = function (docId, event) {
+                if (event) event.preventDefault();
+                const doc = getDocDataById(docId);
+                if (!doc) {
+                    alert('Document not found');
+                    return;
+                }
+                const formatted = JSON.stringify(doc, null, 2);
+                const editDocId = document.getElementById('editDocId');
+                const editPreview = document.getElementById('editJsonPreview');
+                const editTextarea = document.getElementById('editJsonData');
+                if (editDocId) editDocId.value = docId;
+                if (editPreview) editPreview.textContent = formatted;
+                if (editTextarea) editTextarea.value = formatted;
+                if (window.hljs) {
+                    window.hljs.highlightElement(editPreview);
+                }
+                openModal('editModal');
+            };
+        }
+
+        if (typeof window.closeViewModal !== 'function') {
+            window.closeViewModal = function () {
+                closeModal('viewModal');
+            };
+        }
+
+        if (typeof window.closeEditModal !== 'function') {
+            window.closeEditModal = function () {
+                closeModal('editModal');
+            };
+        }
+
+        if (typeof window.closeEditFromViewModal !== 'function') {
+            window.closeEditFromViewModal = function () {
+                closeModal('editFromViewModal');
+            };
+        }
+
+        if (typeof window.switchViewToEdit !== 'function') {
+            window.switchViewToEdit = function () {
+                closeModal('viewModal');
+                const editDocId = document.getElementById('editFromViewDocId');
+                const editPreview = document.getElementById('editFromViewJsonPreview');
+                const editTextarea = document.getElementById('editFromViewJsonData');
+                if (editDocId && window._currentDocId) editDocId.value = window._currentDocId;
+                if (editPreview && window._currentDocJson) editPreview.textContent = window._currentDocJson;
+                if (editTextarea && window._currentDocJson) editTextarea.value = window._currentDocJson;
+                if (window.hljs && editPreview) {
+                    window.hljs.highlightElement(editPreview);
+                }
+                openModal('editFromViewModal');
+            };
+        }
         
         function loadTemplate(templateData) {
             // Parse the template data
@@ -187,7 +310,7 @@ require_once 'config/security.php';
                         
                         // Show success message
                         const tempMsg = document.createElement('div');
-                        tempMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #28a745; color: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; animation: slideInRight 0.3s ease;';
+                        tempMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--accent-success); color: var(--text-on-accent); padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; animation: slideInRight 0.3s ease;';
                         tempMsg.innerHTML = '✅ Template loaded successfully!';
                         document.body.appendChild(tempMsg);
                         
@@ -249,29 +372,29 @@ require_once 'config/security.php';
                 let newStyle = style;
                 
                 // Handle various white patterns
-                if ((style.includes('background: white') || style.includes('background:white') || 
-                     style.includes('background:#fff') || style.includes('background: #fff')) && 
+                if ((style.includes('background: var(--card-bg)') || style.includes('background: var(--card-bg)') || 
+                     style.includes('background: var(--card-bg)') || style.includes('background: var(--card-bg)')) && 
                     !style.includes('linear-gradient') && !style.includes('rgba(255,255,255')) {
                     newStyle = newStyle.replace(/background:\s*white/g, 'background:' + cardBg);
-                    newStyle = newStyle.replace(/background:white/g, 'background:' + cardBg);
+                    newStyle = newStyle.replace(/background: var(--card-bg)/g, 'background:' + cardBg);
                     newStyle = newStyle.replace(/background:\s*#fff(?![0-9a-fA-F])/g, 'background:' + cardBg);
                 }
                 
-                // Handle #f8f9fa, #f5f5f5 backgrounds
-                newStyle = newStyle.replace(/#f8f9fa/g, tableHeaderBg);
-                newStyle = newStyle.replace(/#f5f5f5/g, tableHeaderBg);
+                // Handle var(--surface-muted), var(--surface-muted) backgrounds
+                newStyle = newStyle.replace(/var(--surface-muted)/g, tableHeaderBg);
+                newStyle = newStyle.replace(/var(--surface-muted)/g, tableHeaderBg);
                 
-                // Handle #e9ecef, #dee2e6 backgrounds
-                newStyle = newStyle.replace(/#e9ecef/g, tableBorder);
-                newStyle = newStyle.replace(/#dee2e6/g, tableBorder);
+                // Handle var(--surface-muted), var(--table-border) backgrounds
+                newStyle = newStyle.replace(/var(--surface-muted)/g, tableBorder);
+                newStyle = newStyle.replace(/var(--table-border)/g, tableBorder);
                 
                 // Handle #1e1e1e code backgrounds
                 newStyle = newStyle.replace(/background:\s*#1e1e1e/g, 'background:' + codeBg);
                 
-                // Handle #fff3cd warning backgrounds
-                if (style.includes('#fff3cd')) {
+                // Handle var(--warning-bg) warning backgrounds
+                if (style.includes('var(--warning-bg)')) {
                     const warnBg = getComputedStyle(root).getPropertyValue('--warning-bg').trim();
-                    newStyle = newStyle.replace(/#fff3cd/g, warnBg);
+                    newStyle = newStyle.replace(/var(--warning-bg)/g, warnBg);
                 }
                 
                 if (newStyle !== style) {
@@ -286,39 +409,39 @@ require_once 'config/security.php';
                 
                 let newStyle = style;
                 
-                // Primary text colors (#333, #000)
-                newStyle = newStyle.replace(/color:\s*#333(?![0-9a-fA-F])/g, 'color:' + textPrimary);
-                newStyle = newStyle.replace(/color:#333(?![0-9a-fA-F])/g, 'color:' + textPrimary);
+                // Primary text colors (var(--text-primary), #000)
+                newStyle = newStyle.replace(/color:\s*var(--text-primary)(?![0-9a-fA-F])/g, 'color:' + textPrimary);
+                newStyle = newStyle.replace(/color:var(--text-primary)(?![0-9a-fA-F])/g, 'color:' + textPrimary);
                 
-                // Secondary text colors (#666, #555, #495057)
-                newStyle = newStyle.replace(/color:\s*#666(?![0-9a-fA-F])/g, 'color:' + textSecondary);
-                newStyle = newStyle.replace(/color:#666(?![0-9a-fA-F])/g, 'color:' + textSecondary);
-                newStyle = newStyle.replace(/color:\s*#555(?![0-9a-fA-F])/g, 'color:' + textSecondary);
-                newStyle = newStyle.replace(/color:#555(?![0-9a-fA-F])/g, 'color:' + textSecondary);
-                newStyle = newStyle.replace(/color:\s*#495057/g, 'color:' + textSecondary);
-                newStyle = newStyle.replace(/color:#495057/g, 'color:' + textSecondary);
+                // Secondary text colors (var(--text-secondary), var(--text-secondary), var(--text-secondary))
+                newStyle = newStyle.replace(/color:\s*var(--text-secondary)(?![0-9a-fA-F])/g, 'color:' + textSecondary);
+                newStyle = newStyle.replace(/color:var(--text-secondary)(?![0-9a-fA-F])/g, 'color:' + textSecondary);
+                newStyle = newStyle.replace(/color:\s*var(--text-secondary)(?![0-9a-fA-F])/g, 'color:' + textSecondary);
+                newStyle = newStyle.replace(/color:var(--text-secondary)(?![0-9a-fA-F])/g, 'color:' + textSecondary);
+                newStyle = newStyle.replace(/color:\s*var(--text-secondary)/g, 'color:' + textSecondary);
+                newStyle = newStyle.replace(/color:var(--text-secondary)/g, 'color:' + textSecondary);
                 
-                // Muted text colors (#6c757d, #999, #808080)
-                newStyle = newStyle.replace(/color:\s*#6c757d/g, 'color:' + textMuted);
-                newStyle = newStyle.replace(/color:#6c757d/g, 'color:' + textMuted);
-                newStyle = newStyle.replace(/color:\s*#999(?![0-9a-fA-F])/g, 'color:' + textMuted);
-                newStyle = newStyle.replace(/color:#999(?![0-9a-fA-F])/g, 'color:' + textMuted);
-                newStyle = newStyle.replace(/color:\s*#808080/g, 'color:' + textMuted);
-                newStyle = newStyle.replace(/color:#808080/g, 'color:' + textMuted);
+                // Muted text colors (var(--text-muted), var(--text-muted), var(--text-muted))
+                newStyle = newStyle.replace(/color:\s*var(--text-muted)/g, 'color:' + textMuted);
+                newStyle = newStyle.replace(/color:var(--text-muted)/g, 'color:' + textMuted);
+                newStyle = newStyle.replace(/color:\s*var(--text-muted)(?![0-9a-fA-F])/g, 'color:' + textMuted);
+                newStyle = newStyle.replace(/color:var(--text-muted)(?![0-9a-fA-F])/g, 'color:' + textMuted);
+                newStyle = newStyle.replace(/color:\s*var(--text-muted)/g, 'color:' + textMuted);
+                newStyle = newStyle.replace(/color:var(--text-muted)/g, 'color:' + textMuted);
                 
-                // Warning/orange text colors (#856404, #ffc107, #f57c00)
-                newStyle = newStyle.replace(/color:\s*#856404/g, 'color:' + warningText);
-                newStyle = newStyle.replace(/color:#856404/g, 'color:' + warningText);
-                newStyle = newStyle.replace(/color:\s*#ffc107/g, 'color:' + warningText);
-                newStyle = newStyle.replace(/color:#ffc107/g, 'color:' + warningText);
+                // Warning/orange text colors (var(--warning-text), var(--accent-warning), #f57c00)
+                newStyle = newStyle.replace(/color:\s*var(--warning-text)/g, 'color:' + warningText);
+                newStyle = newStyle.replace(/color:var(--warning-text)/g, 'color:' + warningText);
+                newStyle = newStyle.replace(/color:\s*var(--accent-warning)/g, 'color:' + warningText);
+                newStyle = newStyle.replace(/color:var(--accent-warning)/g, 'color:' + warningText);
                 newStyle = newStyle.replace(/color:\s*#f57c00/g, 'color:' + warningText);
                 newStyle = newStyle.replace(/color:#f57c00/g, 'color:' + warningText);
                 
-                // Danger/red text colors (#dc3545, #c62828, #d84315)
-                newStyle = newStyle.replace(/color:\s*#dc3545/g, 'color:' + dangerText);
-                newStyle = newStyle.replace(/color:#dc3545/g, 'color:' + dangerText);
-                newStyle = newStyle.replace(/color:\s*#c62828/g, 'color:' + dangerText);
-                newStyle = newStyle.replace(/color:#c62828/g, 'color:' + dangerText);
+                // Danger/red text colors (var(--accent-danger), var(--danger-text), #d84315)
+                newStyle = newStyle.replace(/color:\s*var(--accent-danger)/g, 'color:' + dangerText);
+                newStyle = newStyle.replace(/color:var(--accent-danger)/g, 'color:' + dangerText);
+                newStyle = newStyle.replace(/color:\s*var(--danger-text)/g, 'color:' + dangerText);
+                newStyle = newStyle.replace(/color:var(--danger-text)/g, 'color:' + dangerText);
                 newStyle = newStyle.replace(/color:\s*#d84315/g, 'color:' + dangerText);
                 newStyle = newStyle.replace(/color:#d84315/g, 'color:' + dangerText);
                 
@@ -341,12 +464,12 @@ require_once 'config/security.php';
                 let newStyle = style;
                 
                 // Border colors
-                newStyle = newStyle.replace(/border:\s*2px\s+solid\s+#e0e0e0/g, 'border:2px solid ' + tableBorder);
-                newStyle = newStyle.replace(/border:\s*1px\s+solid\s+#e9ecef/g, 'border:1px solid ' + tableBorder);
-                newStyle = newStyle.replace(/border:\s*1px\s+solid\s+#dee2e6/g, 'border:1px solid ' + tableBorder);
-                newStyle = newStyle.replace(/border:\s*2px\s+solid\s+#dee2e6/g, 'border:2px solid ' + tableBorder);
-                newStyle = newStyle.replace(/border-bottom:\s*1px\s+solid\s+#e9ecef/g, 'border-bottom:1px solid ' + tableBorder);
-                newStyle = newStyle.replace(/border-top:\s*1px\s+solid\s+#e9ecef/g, 'border-top:1px solid ' + tableBorder);
+                newStyle = newStyle.replace(/border:\s*2px\s+solid\s+var(--border-color)/g, 'border:2px solid ' + tableBorder);
+                newStyle = newStyle.replace(/border:\s*1px\s+solid\s+var(--surface-muted)/g, 'border:1px solid ' + tableBorder);
+                newStyle = newStyle.replace(/border:\s*1px\s+solid\s+var(--table-border)/g, 'border:1px solid ' + tableBorder);
+                newStyle = newStyle.replace(/border:\s*2px\s+solid\s+var(--table-border)/g, 'border:2px solid ' + tableBorder);
+                newStyle = newStyle.replace(/border-bottom:\s*1px\s+solid\s+var(--surface-muted)/g, 'border-bottom:1px solid ' + tableBorder);
+                newStyle = newStyle.replace(/border-top:\s*1px\s+solid\s+var(--surface-muted)/g, 'border-top:1px solid ' + tableBorder);
                 
                 if (newStyle !== style) {
                     el.setAttribute('style', newStyle);
@@ -358,14 +481,14 @@ require_once 'config/security.php';
                 const style = el.getAttribute('style');
                 if (!style) return;
                 
-                if (style.includes('#f8f9fa') || style.includes('#f5f5f5')) {
-                    let newStyle = style.replace(/#f8f9fa|#f5f5f5/g, codeBg);
+                if (style.includes('var(--surface-muted)') || style.includes('var(--surface-muted)')) {
+                    let newStyle = style.replace(/var(--surface-muted)|var(--surface-muted)/g, codeBg);
                     el.setAttribute('style', newStyle);
                 }
                 
                 // Fix code text color
-                if (style.includes('color: #333') || style.includes('color:#333')) {
-                    let newStyle = style.replace(/color:\s*#333/g, 'color:' + textPrimary);
+                if (style.includes('color: var(--text-primary)') || style.includes('color:var(--text-primary)')) {
+                    let newStyle = style.replace(/color:\s*var(--text-primary)/g, 'color:' + textPrimary);
                     el.setAttribute('style', newStyle);
                 }
             });
@@ -375,8 +498,8 @@ require_once 'config/security.php';
                 const style = el.getAttribute('style');
                 if (!style) return;
                 
-                if (style.includes('background: white') || style.includes('background:#fff') || 
-                    style.includes('background:white') || style.includes('background: #fff')) {
+                if (style.includes('background: var(--card-bg)') || style.includes('background: var(--card-bg)') || 
+                    style.includes('background: var(--card-bg)') || style.includes('background: var(--card-bg)')) {
                     el.style.background = inputBg;
                     if (!style.includes('color:')) {
                         el.style.color = textPrimary;
@@ -451,13 +574,45 @@ require_once 'config/security.php';
             });
             
             // Add loading animation for forms
+            let navigatingAway = false;
+            window.addEventListener('beforeunload', function () {
+                navigatingAway = true;
+            });
+
             document.querySelectorAll('form').forEach(form => {
-                form.addEventListener('submit', function() {
+                form.addEventListener('submit', function (event) {
+                    if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
+                        return;
+                    }
                     const submitBtn = this.querySelector('button[type="submit"]');
-                    if (submitBtn && !submitBtn.dataset.noLoading) {
+                    if (!submitBtn || submitBtn.hasAttribute('data-noLoading') || submitBtn.hasAttribute('data-noloading')) {
+                        return;
+                    }
+
+                    if (!submitBtn.dataset.originalLabel) {
+                        submitBtn.dataset.originalLabel = submitBtn.innerHTML;
+                    }
+
+                    setTimeout(() => {
                         submitBtn.innerHTML = '⏳ Processing...';
                         submitBtn.disabled = true;
-                    }
+                    }, 0);
+
+                    // If the submit gets canceled (confirm or validation), restore the button.
+                    setTimeout(() => {
+                        if (event.defaultPrevented) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = submitBtn.dataset.originalLabel;
+                        }
+                    }, 0);
+
+                    // Safety: if no navigation happens, restore the button shortly after.
+                    setTimeout(() => {
+                        if (!navigatingAway && submitBtn.disabled) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = submitBtn.dataset.originalLabel;
+                        }
+                    }, 1200);
                 });
             });
         });
@@ -474,11 +629,11 @@ require_once 'config/security.php';
                 clearInterval(autoRefreshInterval);
                 autoRefreshInterval = null;
                 btn.textContent = '🔄 Auto Refresh: OFF';
-                btn.style.background = '#6c757d';
+                btn.style.background = 'var(--text-muted)';
             } else {
                 autoRefreshInterval = setInterval(() => window.location.reload(), 5000);
                 btn.textContent = '🔄 Auto Refresh: ON';
-                btn.style.background = '#28a745';
+                btn.style.background = 'var(--accent-success)';
             }
         }
         
@@ -631,7 +786,7 @@ require_once 'config/security.php';
                 alert('✗ Invalid JSON: ' + e.message);
             }
         }
-        
+
         window.onclick = function(event) {
             const editModal = document.getElementById('editModal');
             const editFromViewModal = document.getElementById('editFromViewModal');

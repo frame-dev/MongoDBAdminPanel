@@ -22,15 +22,36 @@ use MongoDB\BSON\UTCDateTime;
 
 // Load security functions
 require_once 'config/security.php';
-$memoryLimitSetting = (int) getSetting('memory_limit', 256);
-$memoryLimitSetting = max(128, min(2048, $memoryLimitSetting));
-ini_set('memory_limit', $memoryLimitSetting . 'M');
 
 // Load authentication functions
 require_once 'config/auth.php';
 
 // Load database configuration first (needed for authentication)
 require_once 'config/database.php';
+
+function isAjaxRequest(): bool {
+    $header = $_SERVER['HTTP_X_REQUESTED_WITH'] ?? '';
+    if (strcasecmp($header, 'XMLHttpRequest') === 0) {
+        return true;
+    }
+    return (isset($_POST['ajax']) && $_POST['ajax'] === '1');
+}
+
+// Load global settings (if available) and apply runtime limits
+$loadedFromDb = false;
+if ($database !== null) {
+    $loadedFromDb = loadGlobalSettingsFromDb();
+}
+if (empty($_SESSION['settings'])) {
+    $_SESSION['settings'] = getDefaultSettings();
+    if ($database !== null && !$loadedFromDb && !hasGlobalSettingsDoc()) {
+        markSettingsUpdated();
+        saveGlobalSettingsToDb($_SESSION['settings']);
+    }
+}
+$memoryLimitSetting = (int) getSetting('memory_limit', 256);
+$memoryLimitSetting = max(128, min(2048, $memoryLimitSetting));
+ini_set('memory_limit', $memoryLimitSetting . 'M');
 
 // Load backup and audit logging utilities (needed early for auditLog function)
 require_once 'includes/backup.php';
@@ -201,6 +222,62 @@ if (!isset($_SESSION['auth_initialized'])) {
     $_SESSION['auth_initialized'] = true;
 }
 
+// Enforce idle session timeout if enabled
+$enableIdleTimeout = (bool) getSetting('enable_idle_timeout', false);
+if ($enableIdleTimeout && isUserLoggedIn()) {
+    $idleMinutes = (int) getSetting('idle_timeout_minutes', 30);
+    $idleMinutes = max(5, min(240, $idleMinutes));
+    $lastActivity = $_SESSION['last_activity'] ?? time();
+
+    if ((time() - $lastActivity) > ($idleMinutes * 60)) {
+        $user = getCurrentUser();
+        logSecurityEvent('idle_timeout', ['username' => $user['username'] ?? 'unknown']);
+        auditLog('session_idle_timeout', ['username' => $user['username'] ?? 'unknown'], 'warning', 'security');
+        unset($_SESSION['user']);
+        $_SESSION['auth_message'] = 'Session expired due to inactivity.';
+        $_SESSION['auth_success'] = false;
+        if (ob_get_length()) ob_clean();
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+}
+// Enforce session validation if enabled
+if (isUserLoggedIn()) {
+    $validateSession = (bool) getSetting('session_validation_enabled', true);
+    $validateIp = (bool) getSetting('ip_tracking_enabled', true);
+    $currentUa = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    $currentIp = $_SERVER['REMOTE_ADDR'] ?? '';
+
+    if ($validateSession) {
+        if (!isset($_SESSION['session_ua'])) {
+            $_SESSION['session_ua'] = $currentUa;
+        } elseif ($_SESSION['session_ua'] !== $currentUa) {
+            logSecurityEvent('session_validation_failed', ['reason' => 'user_agent_mismatch']);
+            unset($_SESSION['user']);
+            $_SESSION['auth_message'] = 'Session validation failed. Please login again.';
+            $_SESSION['auth_success'] = false;
+            if (ob_get_length()) ob_clean();
+            header('Location: ' . $_SERVER['PHP_SELF']);
+            exit;
+        }
+    }
+
+    if ($validateIp) {
+        if (!isset($_SESSION['session_ip'])) {
+            $_SESSION['session_ip'] = $currentIp;
+        } elseif ($_SESSION['session_ip'] !== $currentIp) {
+            logSecurityEvent('session_validation_failed', ['reason' => 'ip_mismatch']);
+            unset($_SESSION['user']);
+            $_SESSION['auth_message'] = 'Session validation failed. Please login again.';
+            $_SESSION['auth_success'] = false;
+            if (ob_get_length()) ob_clean();
+            header('Location: ' . $_SERVER['PHP_SELF']);
+            exit;
+        }
+    }
+}
+$_SESSION['last_activity'] = time();
+
 // Check if user is authenticated (for non-auth actions)
 if (!isUserLoggedIn() && (!isset($_POST['action']) || !in_array($_POST['action'], ['login', 'register']))) {
     include 'templates/login.php';
@@ -220,7 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   $action === 'register' ||
                   $action === 'logout';
     
-    if (!$bypassCsrf) {
+    if (!$bypassCsrf && getSetting('csrf_enabled', true)) {
         $csrfToken = $_POST['csrf_token'] ?? '';
         if (!verifyCSRFToken($csrfToken)) {
             logSecurityEvent('csrf_failed', ['action' => $action]);
@@ -273,8 +350,11 @@ function addToQueryHistory($queryData) {
         $_SESSION['query_history'] = [];
     }
     
-    // Limit session history to last 50 queries
-    if (count($_SESSION['query_history']) >= 50) {
+    $historyLimit = (int) getSetting('query_history_limit', 50);
+    $historyLimit = max(5, min(200, $historyLimit));
+    
+    // Limit session history to configured size
+    if (count($_SESSION['query_history']) >= $historyLimit) {
         array_shift($_SESSION['query_history']);
     }
     
@@ -335,8 +415,13 @@ function addToQueryHistory($queryData) {
  * @param int $limit Maximum number of queries to return
  * @return array Query history entries
  */
-function getQueryHistory($limit = 10) {
+function getQueryHistory($limit = null) {
     global $database;
+    
+    if ($limit === null) {
+        $limit = (int) getSetting('query_history_limit', 50);
+    }
+    $limit = max(5, min(200, (int) $limit));
     
     // Try to get from database if connected
     if ($database !== null) {
@@ -411,6 +496,27 @@ if (isset($_GET['action']) && $_GET['action'] === 'clear_query_history') {
 // Handle Settings and Security tab form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+    $ajaxSettingsActions = [
+        'save_display_settings',
+        'save_performance_settings',
+        'save_editor_settings',
+        'save_notification_settings',
+        'save_export_settings',
+        'save_security_settings',
+        'import_settings',
+        'clear_cache',
+        'reset_settings'
+    ];
+    $settingsRedirectActions = [
+        'save_display_settings',
+        'save_performance_settings',
+        'save_editor_settings',
+        'save_notification_settings',
+        'save_export_settings',
+        'save_security_settings',
+        'clear_cache',
+        'reset_settings'
+    ];
     
     // Handle Display Settings
     if ($action === 'save_display_settings') {
@@ -430,6 +536,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['settings']['row_hover'] = isset($_POST['row_hover']);
         $_SESSION['settings']['fixed_header'] = isset($_POST['fixed_header']);
         $_SESSION['settings']['compact_mode'] = isset($_POST['compact_mode']);
+        $previewLength = (int) ($_POST['preview_length'] ?? 80);
+        $_SESSION['settings']['preview_length'] = max(20, min(200, $previewLength));
+        $_SESSION['settings']['key_fields_priority'] = sanitizeInput($_POST['key_fields_priority'] ?? 'name,title,email,status,type,category');
+        markSettingsUpdated();
+        saveGlobalSettingsToDb($_SESSION['settings']);
         
         $message = '✅ Display settings saved successfully';
         $messageType = 'success';
@@ -442,6 +553,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['settings']['query_timeout'] = max(5, min(300, (int) ($_POST['query_timeout'] ?? 30)));
         $_SESSION['settings']['max_results'] = max(100, min(10000, (int) ($_POST['max_results'] ?? 1000)));
         $_SESSION['settings']['query_default_limit'] = max(10, min(10000, (int) ($_POST['query_default_limit'] ?? 50)));
+        $_SESSION['settings']['query_history_limit'] = max(5, min(200, (int) ($_POST['query_history_limit'] ?? 50)));
         $_SESSION['settings']['memory_limit'] = max(128, min(2048, (int) ($_POST['memory_limit'] ?? 256)));
         $_SESSION['settings']['cache_ttl'] = max(1, min(1440, (int) ($_POST['cache_ttl'] ?? 15)));
         $_SESSION['settings']['query_cache'] = isset($_POST['query_cache']);
@@ -449,6 +561,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['settings']['schema_cache'] = isset($_POST['schema_cache']);
         $_SESSION['settings']['lazy_load'] = isset($_POST['lazy_load']);
         $_SESSION['settings']['schema_sample_size'] = max(10, min(500, (int) ($_POST['schema_sample_size'] ?? 100)));
+        markSettingsUpdated();
+        saveGlobalSettingsToDb($_SESSION['settings']);
         
         $message = '✅ Performance settings saved successfully';
         $messageType = 'success';
@@ -469,6 +583,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['settings']['show_tooltips'] = isset($_POST['show_tooltips']);
         $_SESSION['settings']['keyboard_shortcuts'] = isset($_POST['keyboard_shortcuts']);
         $_SESSION['settings']['save_scroll_position'] = isset($_POST['save_scroll_position']);
+        markSettingsUpdated();
+        saveGlobalSettingsToDb($_SESSION['settings']);
         
         $message = '✅ Editor settings saved successfully';
         $messageType = 'success';
@@ -488,6 +604,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['settings']['animation_effects'] = isset($_POST['animation_effects']);
         $_SESSION['settings']['loading_indicators'] = isset($_POST['loading_indicators']);
         $_SESSION['settings']['progress_bars'] = isset($_POST['progress_bars']);
+        markSettingsUpdated();
+        saveGlobalSettingsToDb($_SESSION['settings']);
         
         $message = '✅ Notification settings saved successfully';
         $messageType = 'success';
@@ -499,12 +617,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['settings'] = $_SESSION['settings'] ?? [];
         $_SESSION['settings']['default_export_format'] = sanitizeInput($_POST['default_export_format'] ?? 'json');
         $_SESSION['settings']['export_filename_prefix'] = sanitizeInput($_POST['export_filename_prefix'] ?? 'export');
+        $csvDelimiter = $_POST['csv_delimiter'] ?? ';';
+        $allowedCsvDelimiters = [';', ',', 'tab', '|'];
+        if (!in_array($csvDelimiter, $allowedCsvDelimiters, true)) {
+            $csvDelimiter = ';';
+        }
+        $_SESSION['settings']['csv_delimiter'] = $csvDelimiter;
         $_SESSION['settings']['include_metadata'] = isset($_POST['include_metadata']);
+        $_SESSION['settings']['csv_include_bom'] = isset($_POST['csv_include_bom']);
         $_SESSION['settings']['compress_exports'] = isset($_POST['compress_exports']);
         $_SESSION['settings']['timestamp_exports'] = isset($_POST['timestamp_exports']);
         $_SESSION['settings']['auto_backup'] = isset($_POST['auto_backup']);
         $_SESSION['settings']['backup_frequency'] = sanitizeInput($_POST['backup_frequency'] ?? 'weekly');
         $_SESSION['settings']['backup_retention'] = max(1, min(365, (int) ($_POST['backup_retention'] ?? 30)));
+        markSettingsUpdated();
+        saveGlobalSettingsToDb($_SESSION['settings']);
         
         $message = '✅ Export settings saved successfully';
         $messageType = 'success';
@@ -514,12 +641,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Handle Security Settings
     elseif ($action === 'save_security_settings') {
         $_SESSION['settings'] = $_SESSION['settings'] ?? [];
+        $_SESSION['settings']['csrf_enabled'] = isset($_POST['csrf_enabled']);
         $_SESSION['settings']['csrf_token_lifetime'] = max(10, min(1440, (int) ($_POST['csrf_token_lifetime'] ?? 60)));
+        $_SESSION['settings']['session_validation_enabled'] = isset($_POST['session_validation_enabled']);
+        $_SESSION['settings']['ip_tracking_enabled'] = isset($_POST['ip_tracking_enabled']);
+        $_SESSION['settings']['rate_limit_enabled'] = isset($_POST['rate_limit_enabled']);
         $_SESSION['settings']['rate_limit_requests'] = max(10, min(1000, (int) ($_POST['rate_limit_requests'] ?? 30)));
         $_SESSION['settings']['rate_limit_lockout'] = max(30, min(3600, (int) ($_POST['rate_limit_lockout'] ?? 60)));
+        $_SESSION['settings']['enable_idle_timeout'] = isset($_POST['enable_idle_timeout']);
+        $_SESSION['settings']['idle_timeout_minutes'] = max(5, min(240, (int) ($_POST['idle_timeout_minutes'] ?? 30)));
         $_SESSION['settings']['log_all_actions'] = isset($_POST['log_all_actions']);
         $_SESSION['settings']['log_failed_logins'] = isset($_POST['log_failed_logins']);
         $_SESSION['settings']['log_security_events'] = isset($_POST['log_security_events']);
+        markSettingsUpdated();
+        saveGlobalSettingsToDb($_SESSION['settings']);
         
         $message = '✅ Security settings saved successfully';
         $messageType = 'success';
@@ -557,6 +692,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $messageType = 'error';
                 } else {
                     $_SESSION['settings'] = array_merge($_SESSION['settings'] ?? [], $importedSettings);
+                    markSettingsUpdated();
+                    saveGlobalSettingsToDb($_SESSION['settings']);
                     $message = '✅ Settings imported successfully';
                     $messageType = 'success';
                     auditLog('settings_imported', ['settings_count' => count($importedSettings)], 'warning', 'system');
@@ -578,67 +715,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Handle Settings Reset
     elseif ($action === 'reset_settings') {
-        $_SESSION['settings'] = [
-            'items_per_page' => 50,
-            'date_format' => 'Y-m-d H:i:s',
-            'theme' => 'light',
-            'default_sort_field' => '_id',
-            'default_sort_order' => '-1',
-            'default_view_mode' => 'table',
-            'syntax_highlighting' => true,
-            'pretty_print' => true,
-            'show_objectid_as_string' => false,
-            'collapsible_json' => false,
-            'zebra_stripes' => true,
-            'row_hover' => true,
-            'fixed_header' => false,
-            'compact_mode' => false,
-            'query_timeout' => 30,
-            'max_results' => 1000,
-            'query_default_limit' => 50,
-            'memory_limit' => 256,
-            'cache_ttl' => 15,
-            'query_cache' => true,
-            'auto_indexes' => true,
-            'schema_cache' => false,
-            'lazy_load' => false,
-            'schema_sample_size' => 100,
-            'editor_theme' => 'monokai',
-            'editor_font_size' => 14,
-            'line_numbers' => true,
-            'auto_format' => true,
-            'validate_on_type' => false,
-            'auto_refresh' => false,
-            'refresh_interval' => 30,
-            'confirm_deletions' => true,
-            'show_tooltips' => true,
-            'keyboard_shortcuts' => true,
-            'save_scroll_position' => false,
-            'show_success_messages' => true,
-            'show_error_messages' => true,
-            'show_warning_messages' => true,
-            'auto_dismiss_alerts' => true,
-            'alert_duration' => 5,
-            'enable_sounds' => false,
-            'desktop_notifications' => false,
-            'animation_effects' => true,
-            'loading_indicators' => true,
-            'progress_bars' => true,
-            'default_export_format' => 'json',
-            'export_filename_prefix' => 'export',
-            'include_metadata' => true,
-            'compress_exports' => false,
-            'timestamp_exports' => true,
-            'auto_backup' => false,
-            'backup_frequency' => 'weekly',
-            'backup_retention' => 30,
-            'csrf_token_lifetime' => 60,
-            'rate_limit_requests' => 30,
-            'rate_limit_lockout' => 60,
-            'log_all_actions' => true,
-            'log_failed_logins' => true,
-            'log_security_events' => true
-        ];
+        $_SESSION['settings'] = getDefaultSettings();
+        markSettingsUpdated();
+        saveGlobalSettingsToDb($_SESSION['settings']);
         $message = '✅ All settings reset to defaults';
         $messageType = 'success';
         auditLog('settings_reset', [], 'warning', 'system');
@@ -808,7 +887,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     elseif ($action === 'export_query_history') {
-        $history = getQueryHistory(50);
+        $history = getQueryHistory(getSetting('query_history_limit', 50));
         header('Content-Type: application/json; charset=utf-8');
         header('Content-Disposition: attachment; filename="query_history_' . date('Ymd_His') . '.json"');
         echo json_encode($history, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
@@ -845,12 +924,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Catch-all: If we processed a POST action but didn't redirect yet, redirect now to prevent form resubmission
     if ($action && isset($message)) {
+        if (isAjaxRequest() && in_array($action, $ajaxSettingsActions, true)) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'message' => $message,
+                'messageType' => $messageType ?? 'info',
+                'settings' => $_SESSION['settings'] ?? []
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
         $_SESSION['message'] = $message;
         $_SESSION['messageType'] = $messageType ?? 'info';
         if (ob_get_length()) ob_clean();
         $redirectUrl = $_SERVER['PHP_SELF'];
         if (isset($collectionName) && $collectionName) {
             $redirectUrl .= '?collection=' . urlencode($collectionName);
+        }
+        if (in_array($action, $settingsRedirectActions, true)) {
+            $redirectUrl .= (strpos($redirectUrl, '?') === false ? '?' : '&') . 'tab=settings';
         }
         header('Location: ' . $redirectUrl);
         exit;
@@ -882,6 +973,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $timestampExports = (bool) getSetting('timestamp_exports', true);
             $compressExports = (bool) getSetting('compress_exports', false);
             $includeMetadata = (bool) getSetting('include_metadata', true);
+            $delimiterSetting = getSetting('csv_delimiter', ';');
+            $includeCsvBom = (bool) getSetting('csv_include_bom', true);
 
             $sortField = sanitizeInput($_POST['sort'] ?? '_id');
             $sortOrder = ($_POST['sort_order'] ?? 'desc') === 'asc' ? 1 : -1;
@@ -1052,6 +1145,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Unable to open output stream');
             }
 
+            $delimiter = ';';
+            if ($delimiterSetting === ',') {
+                $delimiter = ',';
+            } elseif ($delimiterSetting === 'tab') {
+                $delimiter = "\t";
+            } elseif ($delimiterSetting === '|') {
+                $delimiter = '|';
+            }
+
+            if ($includeCsvBom) {
+                fwrite($out, "\xEF\xBB\xBF");
+            }
+
             // Collect top-level keys across documents
             $columns = [];
             foreach ($queryResults as $doc) {
@@ -1072,7 +1178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 fwrite($out, '# Collection: ' . $collectionName . PHP_EOL);
                 fwrite($out, '# Count: ' . count($queryResults) . PHP_EOL);
             }
-            fputcsv($out, $columns);
+            fputcsv($out, $columns, $delimiter, '"', '\\');
 
             foreach ($queryResults as $doc) {
                 $arr = json_decode(json_encode($doc), true);
@@ -1084,7 +1190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     $row[] = $val;
                 }
-                fputcsv($out, $row);
+                fputcsv($out, $row, $delimiter, '"', '\\');
             }
 
             rewind($out);
@@ -2077,6 +2183,10 @@ include 'templates/header.php';
             div.textContent = text;
             return div.innerHTML;
         }
+
+        // Ensure inline handlers can access these functions
+        window.viewDocument = viewDocument;
+        window.editDocument = editDocument;
 
         // JSON Import Modal
         function openJsonImportModal() {

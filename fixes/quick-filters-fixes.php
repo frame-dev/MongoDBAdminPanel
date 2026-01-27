@@ -17,17 +17,17 @@ function generateQuickFilters($detectedFields) {
         $dateField = reset($dateFields);
         $quickFilters[] = [
             'label' => '📅 Today',
-            'style' => 'background: #667eea; color: white;',
+            'style' => 'background: var(--accent-primary); color: var(--text-on-accent);',
             'action' => "applyQuickFilter('today', '" . htmlspecialchars($dateField) . "')"
         ];
         $quickFilters[] = [
             'label' => '📆 This Week',
-            'style' => 'background: #667eea; color: white;',
+            'style' => 'background: var(--accent-primary); color: var(--text-on-accent);',
             'action' => "applyQuickFilter('week', '" . htmlspecialchars($dateField) . "')"
         ];
         $quickFilters[] = [
             'label' => '📅 This Month',
-            'style' => 'background: #667eea; color: white;',
+            'style' => 'background: var(--accent-primary); color: var(--text-on-accent);',
             'action' => "applyQuickFilter('month', '" . htmlspecialchars($dateField) . "')"
         ];
     }
@@ -36,12 +36,12 @@ function generateQuickFilters($detectedFields) {
     if (in_array('status', $detectedFields)) {
         $quickFilters[] = [
             'label' => '🟢 Active',
-            'style' => 'background: #28a745; color: white;',
+            'style' => 'background: var(--accent-success); color: var(--text-on-accent);',
             'action' => "applyQuickFilter('status_value', 'status', 'active')"
         ];
         $quickFilters[] = [
             'label' => '🔴 Inactive',
-            'style' => 'background: #dc3545; color: white;',
+            'style' => 'background: var(--accent-danger); color: var(--text-on-accent);',
             'action' => "applyQuickFilter('status_value', 'status', 'inactive')"
         ];
     }
@@ -50,12 +50,12 @@ function generateQuickFilters($detectedFields) {
     if (in_array('email', $detectedFields)) {
         $quickFilters[] = [
             'label' => '📧 Has Email',
-            'style' => 'background: #17a2b8; color: white;',
+            'style' => 'background: var(--accent-info); color: var(--text-on-accent);',
             'action' => "applyQuickFilter('has_field', 'email')"
         ];
         $quickFilters[] = [
             'label' => '❌ No Email',
-            'style' => 'background: #6c757d; color: white;',
+            'style' => 'background: var(--text-muted); color: var(--text-on-accent);',
             'action' => "applyQuickFilter('empty_field', 'email')"
         ];
     }
@@ -63,7 +63,7 @@ function generateQuickFilters($detectedFields) {
     // All documents filter
     $quickFilters[] = [
         'label' => '🌐 All Documents',
-        'style' => 'background: #f5f5f5; color: #616161; border: 2px solid #9e9e9e;',
+        'style' => 'background: var(--surface-muted); color: var(--text-secondary); border: 2px solid var(--border-color);',
         'action' => "applyQuickFilter('all')"
     ];
     

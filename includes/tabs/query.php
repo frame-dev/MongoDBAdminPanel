@@ -14,91 +14,91 @@
     <div id="query" class="tab-content">
         <h2 style="margin-bottom: 20px;">🔍 Advanced Query Builder</h2>
         <div
-            style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #667eea;">
-            <p style="color: #666; line-height: 1.8;">
+            style="background: linear-gradient(135deg, var(--accent-primary)15 0%, var(--accent-secondary)15 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid var(--accent-primary);">
+            <p style="color: var(--text-secondary); line-height: 1.8;">
                 <strong>💡 Tip:</strong> Build complex MongoDB queries visually or write custom JSON queries.
                 Supports filtering, sorting, projection, and aggregation pipelines.
             </p>
         </div>
 
         <div
-            style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;">
-            <h3 style="margin-bottom: 20px; color: #333;">🎯 Quick Query</h3>
+            style="background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;">
+            <h3 style="margin-bottom: 20px; color: var(--text-primary);">🎯 Quick Query</h3>
             <form method="POST" id="quickQueryForm"
                 style="display: grid; gap: 15px;">
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #555;">Field
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary);">Field
                             Name:</label>
                         <input type="text" name="query_field" placeholder="e.g., email, status, name"
-                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                            style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px;">
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #555;">Field
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary);">Field
                             Value:</label>
                         <input type="text" name="query_value" placeholder="Search value"
-                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                            style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px;">
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
                     <div>
                         <label
-                            style="display: block; font-weight: 600; margin-bottom: 8px; color: #555;">Operator:</label>
+                            style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary);">Operator:</label>
                         <select name="query_op"
-                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                            style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px;">
                             <?php echo generateOperatorOptions(); ?>
                         </select>
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #555;">Sort
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary);">Sort
                             By:</label>
                         <select name="sort"
-                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                            style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px;">
                             <?php echo generateFieldOptions($querySortFields, '_id'); ?>
                         </select>
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #555;">Limit:</label>
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary);">Limit:</label>
                         <input type="number" name="limit" value="<?php echo $defaultQueryLimit; ?>" min="1" max="<?php echo $maxResultsSetting; ?>"
-                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                            style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px;">
                     </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
                     <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #555;">Value
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary);">Value
                             Type:</label>
                         <select name="value_type"
-                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                            style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px;">
                             <?php echo generateValueTypeOptions(); ?>
                         </select>
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #555;">Sort
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary);">Sort
                             Order:</label>
                         <select name="sort_order"
-                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                            style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px;">
                             <?php echo generateSortOrderOptions($currentSortOrder); ?>
                         </select>
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #555;">Projection
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary);">Projection
                             (fields):</label>
                         <input type="text" name="projection" placeholder="e.g., email,status,name"
-                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                            style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px;">
                     </div>
                 </div>
                 <button type="button" class="btn" onclick="executeQuickQuery(); return false;"
-                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; font-size: 16px; width: 100%;">
+                    style="background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%); color: var(--text-on-accent); padding: 15px; font-size: 16px; width: 100%;">
                     🔍 Execute Query
                 </button>
             </form>
         </div>
 
-        <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <h3 style="margin-bottom: 20px; color: #333;">📝 Custom JSON Query</h3>
-            <p style="color: #666; margin-bottom: 15px; font-size: 14px;">Write a MongoDB query in JSON format (e.g.,
+        <div style="background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h3 style="margin-bottom: 20px; color: var(--text-primary);">📝 Custom JSON Query</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 14px;">Write a MongoDB query in JSON format (e.g.,
                 <code>{"status": "active", "age": {"$gt": 18}}</code>)
             </p>
             <form method="POST" id="customQueryForm">
@@ -106,10 +106,10 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                     <div>
                         <label
-                            style="display: block; font-weight: 600; margin-bottom: 6px; color: #555; font-size: 13px;">Sort
+                            style="display: block; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary); font-size: 13px;">Sort
                             By:</label>
                         <select name="sort"
-                            style="width: 100%; padding: 10px 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 13px;">
+                            style="width: 100%; padding: 10px 12px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 13px;">
                             <option value="_id">_id</option>
                             <option value="created_at">Created Date</option>
                             <option value="updated_at">Updated Date</option>
@@ -117,30 +117,30 @@
                     </div>
                     <div>
                         <label
-                            style="display: block; font-weight: 600; margin-bottom: 6px; color: #555; font-size: 13px;">Sort
+                            style="display: block; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary); font-size: 13px;">Sort
                             Order:</label>
                         <select name="sort_order"
-                            style="width: 100%; padding: 10px 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 13px;">
+                            style="width: 100%; padding: 10px 12px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 13px;">
                             <?php echo generateSortOrderOptions($currentSortOrder); ?>
                         </select>
                     </div>
                     <div>
                         <label
-                            style="display: block; font-weight: 600; margin-bottom: 6px; color: #555; font-size: 13px;">Limit:</label>
+                            style="display: block; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary); font-size: 13px;">Limit:</label>
                         <input type="number" name="limit" value="<?php echo $defaultQueryLimit; ?>" min="1" max="<?php echo $maxResultsSetting; ?>"
-                            style="width: 100%; padding: 10px 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 13px;">
+                            style="width: 100%; padding: 10px 12px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 13px;">
                     </div>
                     <div>
                         <label
-                            style="display: block; font-weight: 600; margin-bottom: 6px; color: #555; font-size: 13px;">Projection:</label>
+                            style="display: block; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary); font-size: 13px;">Projection:</label>
                         <input type="text" name="projection" placeholder="email,status,name"
-                            style="width: 100%; padding: 10px 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 13px;">
+                            style="width: 100%; padding: 10px 12px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 13px;">
                     </div>
                 </div>
                 <textarea name="custom_query" placeholder='{"field": "value"}'
-                    style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 8px; font-family: 'Courier New', monospace; min-height: 150px; font-size: 13px; background: #f8f9fa;"></textarea>
+                    style="width: 100%; padding: 15px; border: 2px solid var(--border-color); border-radius: 8px; font-family: 'Courier New', monospace; min-height: 150px; font-size: 13px; background: var(--surface-muted);"></textarea>
                 <button type="button" class="btn" onclick="executeCustomQuery(); return false;"
-                    style="background: #17a2b8; color: white; padding: 12px 24px; margin-top: 15px;">
+                    style="background: var(--accent-info); color: var(--text-on-accent); padding: 12px 24px; margin-top: 15px;">
                     ⚡ Run Custom Query
                 </button>
             </form>
@@ -148,8 +148,8 @@
 
         <?php if (isset($_POST['action']) && ($_POST['action'] === 'execute_query' || $_POST['action'] === 'execute_custom_query')): ?>
             <div id="query_results" class="query-result"
-                style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-top: 20px;">
-                <h3 style="margin-bottom: 20px; color: #333;">📊 Query Results</h3>
+                style="background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-top: 20px;">
+                <h3 style="margin-bottom: 20px; color: var(--text-primary);">📊 Query Results</h3>
 
                 <?php
                 try {
@@ -187,9 +187,9 @@
 
                         $queryResults = $collection->find($mongoQuery, $findOptions)->toArray();
 
-                        echo '<p style="color: #666; margin-bottom: 15px;"><strong>Query:</strong> Field: ' . htmlspecialchars($field) . ' | Operator: ' . htmlspecialchars($operator) . ' | Value: ' . htmlspecialchars($rawValue) . ' | Type: ' . htmlspecialchars($valueType) . ' | Sort: ' . htmlspecialchars($sortField) . ' ' . ($sortOrder === 1 ? 'ASC' : 'DESC') . ' | Limit: ' . htmlspecialchars((string) $limit) . '</p>';
+                        echo '<p style="color: var(--text-secondary); margin-bottom: 15px;"><strong>Query:</strong> Field: ' . htmlspecialchars($field) . ' | Operator: ' . htmlspecialchars($operator) . ' | Value: ' . htmlspecialchars($rawValue) . ' | Type: ' . htmlspecialchars($valueType) . ' | Sort: ' . htmlspecialchars($sortField) . ' ' . ($sortOrder === 1 ? 'ASC' : 'DESC') . ' | Limit: ' . htmlspecialchars((string) $limit) . '</p>';
                         if ($projectionRaw !== '') {
-                            echo '<p style="color: #666; margin-bottom: 15px;"><strong>Projection:</strong> ' . htmlspecialchars($projectionRaw) . '</p>';
+                            echo '<p style="color: var(--text-secondary); margin-bottom: 15px;"><strong>Projection:</strong> ' . htmlspecialchars($projectionRaw) . '</p>';
                         }
                     } else {
                         // Custom JSON Query execution
@@ -222,14 +222,14 @@
 
                         $queryResults = $collection->find($sanitizedQuery, $findOptions)->toArray();
 
-                        echo '<p style="color: #666; margin-bottom: 15px;"><strong>Custom Query:</strong> Sort: ' . htmlspecialchars($sortField) . ' ' . ($sortOrder === 1 ? 'ASC' : 'DESC') . ' | Limit: ' . htmlspecialchars((string) $limit) . '</p>';
+                        echo '<p style="color: var(--text-secondary); margin-bottom: 15px;"><strong>Custom Query:</strong> Sort: ' . htmlspecialchars($sortField) . ' ' . ($sortOrder === 1 ? 'ASC' : 'DESC') . ' | Limit: ' . htmlspecialchars((string) $limit) . '</p>';
                         if ($projectionRaw !== '') {
-                            echo '<p style="color: #666; margin-bottom: 15px;"><strong>Projection:</strong> ' . htmlspecialchars($projectionRaw) . '</p>';
+                            echo '<p style="color: var(--text-secondary); margin-bottom: 15px;"><strong>Projection:</strong> ' . htmlspecialchars($projectionRaw) . '</p>';
                         }
-                        echo '<pre style="background: #f8f9fa; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; color: #333;">' . htmlspecialchars($customQuery) . '</pre>';
+                        echo '<pre style="background: var(--surface-muted); padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; color: var(--text-primary);">' . htmlspecialchars($customQuery) . '</pre>';
                     }
 
-                    echo '<p style="color: #28a745; font-weight: 600; margin: 15px 0;"> Found ' . count($queryResults) . ' document(s)</p>';
+                    echo '<p style="color: var(--accent-success); font-weight: 600; margin: 15px 0;"> Found ' . count($queryResults) . ' document(s)</p>';
 
                     // Add to query history
                     $historyEntry = [
@@ -254,7 +254,7 @@
                                 echo '<input type="hidden" name="' . htmlspecialchars($k) . '" value="' . htmlspecialchars((string) $_POST[$k]) . '">';
                             }
                         }
-                        echo '<button type="submit" class="btn" style="background:#343a40;color:#fff; padding:8px 12px; font-size:12px;">⬇️ Export JSON</button>';
+                        echo '<button type="submit" class="btn" style="background:var(--text-primary);color: var(--text-on-accent); padding:8px 12px; font-size:12px;">⬇️ Export JSON</button>';
                         echo '</form>';
 
                         echo '<form method="POST" style="display:inline;">';
@@ -266,7 +266,7 @@
                                 echo '<input type="hidden" name="' . htmlspecialchars($k) . '" value="' . htmlspecialchars((string) $_POST[$k]) . '">';
                             }
                         }
-                        echo '<button type="submit" class="btn" style="background:#198754;color:#fff; padding:8px 12px; font-size:12px;">⬇️ Export CSV</button>';
+                        echo '<button type="submit" class="btn" style="background:var(--accent-success);color: var(--text-on-accent); padding:8px 12px; font-size:12px;">⬇️ Export CSV</button>';
                         echo '</form>';
                         echo '</div>';
                     }
@@ -283,7 +283,7 @@
                         echo '</tbody></table>';
                     }
                 } catch (Exception $e) {
-                    echo '<div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 6px; border: 1px solid #f5c6cb;">';
+                    echo '<div style="background: var(--danger-bg); color: var(--danger-text); padding: 15px; border-radius: 6px; border: 1px solid var(--danger-border);">';
                     echo '❌ Error: ' . htmlspecialchars($e->getMessage());
                     echo '</div>';
                 }

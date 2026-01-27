@@ -6,26 +6,26 @@
             <p style="margin: 8px 0 0 0; color: var(--text-secondary); font-size: 14px;">Manage user accounts, roles, and permissions</p>
         </div>
         <div class="card-body">
-            <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+            <div style="background: var(--surface-muted); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
                 <h3 style="margin: 0 0 10px 0;">🔒 Change Your Password</h3>
                 <form method="POST" onsubmit="return validateChangePasswordForm(this)">
                     <input type="hidden" name="action" value="change_password">
                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
                         <div class="form-group" style="margin: 0;">
-                            <label>Current Password <span style="color: #dc3545;">*</span></label>
+                            <label>Current Password <span style="color: var(--accent-danger);">*</span></label>
                             <input type="password" name="old_password" required minlength="8" class="form-control" placeholder="Current password">
                         </div>
                         <div class="form-group" style="margin: 0;">
-                            <label>New Password <span style="color: #dc3545;">*</span></label>
+                            <label>New Password <span style="color: var(--accent-danger);">*</span></label>
                             <input type="password" name="new_password" required minlength="8" class="form-control" placeholder="New password">
                         </div>
                         <div class="form-group" style="margin: 0;">
-                            <label>Confirm New Password <span style="color: #dc3545;">*</span></label>
+                            <label>Confirm New Password <span style="color: var(--accent-danger);">*</span></label>
                             <input type="password" name="new_password_confirm" required minlength="8" class="form-control" placeholder="Confirm new password">
                         </div>
                     </div>
-                    <button type="submit" class="btn" style="margin-top: 12px; background: #667eea; color: white;">
+                    <button type="submit" class="btn" style="margin-top: 12px; background: var(--accent-primary); color: var(--text-on-accent);">
                         🔑 Update Password
                     </button>
                 </form>
@@ -39,7 +39,7 @@
                 <!-- Add New User Button -->
                 <div style="margin-bottom: 20px;">
                     <button type="button" class="btn" onclick="openAddUserModal()" 
-                        style="background: #28a745; color: white; padding: 12px 24px;">
+                        style="background: var(--accent-success); color: var(--text-on-accent); padding: 12px 24px;">
                         ➕ Add New User
                     </button>
                 </div>
@@ -77,15 +77,15 @@
                                         <td>
                                             <span style="padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; 
                                                 background: <?php 
-                                                    echo $user['role'] === 'admin' ? '#667eea' : 
-                                                        ($user['role'] === 'editor' ? '#f59e0b' : '#6c757d'); 
-                                                ?>; color: white;">
+                                                    echo $user['role'] === 'admin' ? 'var(--accent-primary)' : 
+                                                        ($user['role'] === 'editor' ? 'var(--accent-amber)' : 'var(--text-muted)'); 
+                                                ?>; color: var(--text-on-accent);">
                                                 <?php echo strtoupper($user['role']); ?>
                                             </span>
                                         </td>
                                         <td>
                                             <span style="padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; 
-                                                background: <?php echo $user['is_active'] ? '#28a745' : '#dc3545'; ?>; color: white;">
+                                                background: <?php echo $user['is_active'] ? 'var(--accent-success)' : 'var(--accent-danger)'; ?>; color: var(--text-on-accent);">
                                                 <?php echo $user['is_active'] ? '✓ Active' : '✗ Inactive'; ?>
                                             </span>
                                         </td>
@@ -111,21 +111,21 @@
                                                     <button type="button" class="btn-icon" 
                                                         onclick="toggleUserStatus('<?php echo $user['id']; ?>', false)"
                                                         title="Deactivate User"
-                                                        style="background: #ffc107;">
+                                                        style="background: var(--accent-warning);">
                                                         ⏸️
                                                     </button>
                                                 <?php else: ?>
                                                     <button type="button" class="btn-icon" 
                                                         onclick="toggleUserStatus('<?php echo $user['id']; ?>', true)"
                                                         title="Activate User"
-                                                        style="background: #28a745;">
+                                                        style="background: var(--accent-success);">
                                                         ▶️
                                                     </button>
                                                 <?php endif; ?>
                                                 <button type="button" class="btn-icon" 
                                                     onclick="deleteUserConfirm('<?php echo $user['id']; ?>', '<?php echo htmlspecialchars($user['username'], ENT_QUOTES); ?>')"
                                                     title="Delete User"
-                                                    style="background: #dc3545;">
+                                                    style="background: var(--accent-danger);">
                                                     🗑️
                                                 </button>
                                             </div>
@@ -179,27 +179,27 @@
                             $allRoles = getAllRoles();
                             foreach ($allRoles as $roleKey => $roleData): 
                             ?>
-                                <div style="background: white; border: 2px solid #e0e0e0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <div style="background: var(--card-bg); border: 2px solid var(--border-color); border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
                                         <div>
-                                            <h4 style="margin: 0 0 5px 0; color: #333; font-size: 18px;">
+                                            <h4 style="margin: 0 0 5px 0; color: var(--text-primary); font-size: 18px;">
                                                 <?php 
                                                 $icons = ['admin' => '👑', 'editor' => '✏️', 'developer' => '👨‍💻', 'analyst' => '📊', 'viewer' => '👁️'];
                                                 echo ($icons[$roleKey] ?? '👤') . ' ' . htmlspecialchars($roleData['name']); 
                                                 ?>
                                             </h4>
-                                            <p style="margin: 0; color: #666; font-size: 13px;"><?php echo htmlspecialchars($roleData['description']); ?></p>
+                                            <p style="margin: 0; color: var(--text-secondary); font-size: 13px;"><?php echo htmlspecialchars($roleData['description']); ?></p>
                                         </div>
                                         <span style="background: <?php 
-                                            $colors = ['admin' => '#667eea', 'editor' => '#f59e0b', 'developer' => '#10b981', 'analyst' => '#06b6d4', 'viewer' => '#6c757d'];
-                                            echo $colors[$roleKey] ?? '#6c757d'; 
-                                        ?>; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                                            $colors = ['admin' => 'var(--accent-primary)', 'editor' => 'var(--accent-amber)', 'developer' => 'var(--accent-teal)', 'analyst' => 'var(--accent-sky)', 'viewer' => 'var(--text-muted)'];
+                                            echo $colors[$roleKey] ?? 'var(--text-muted)'; 
+                                        ?>; color: var(--text-on-accent); padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">
                                             Level <?php echo $roleData['level']; ?>
                                         </span>
                                     </div>
                                     
-                                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
-                                        <h5 style="margin: 0 0 10px 0; font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">Key Permissions:</h5>
+                                    <div style="background: var(--surface-muted); padding: 15px; border-radius: 8px; margin-top: 15px;">
+                                        <h5 style="margin: 0 0 10px 0; font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Key Permissions:</h5>
                                         <div style="display: grid; gap: 6px; font-size: 12px;">
                                             <?php 
                                             $keyPermissions = ['view_data', 'create_data', 'edit_data', 'delete_data', 'manage_users', 'export_data'];
@@ -207,14 +207,14 @@
                                                 $hasPermission = $roleData['permissions'][$perm] ?? false;
                                             ?>
                                                 <div style="display: flex; align-items: center; gap: 6px;">
-                                                    <span style="color: <?php echo $hasPermission ? '#28a745' : '#dc3545'; ?>; font-size: 14px;">
+                                                    <span style="color: <?php echo $hasPermission ? 'var(--accent-success)' : 'var(--accent-danger)'; ?>; font-size: 14px;">
                                                         <?php echo $hasPermission ? '✓' : '✗'; ?>
                                                     </span>
-                                                    <span style="color: #555;"><?php echo ucwords(str_replace('_', ' ', $perm)); ?></span>
+                                                    <span style="color: var(--text-secondary);"><?php echo ucwords(str_replace('_', ' ', $perm)); ?></span>
                                                 </div>
                                             <?php endforeach; ?>
                                             <button type="button" onclick="showFullPermissions('<?php echo $roleKey; ?>')" 
-                                                style="margin-top: 8px; background: #e3f2fd; border: none; padding: 6px 12px; border-radius: 6px; color: #1976d2; cursor: pointer; font-size: 11px; font-weight: 600;">
+                                                style="margin-top: 8px; background: var(--info-bg); border: none; padding: 6px 12px; border-radius: 6px; color: var(--info-text); cursor: pointer; font-size: 11px; font-weight: 600;">
                                                 View All Permissions →
                                             </button>
                                         </div>
@@ -254,13 +254,13 @@
             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
             
             <div class="form-group">
-                <label>Username <span style="color: #dc3545;">*</span></label>
+                <label>Username <span style="color: var(--accent-danger);">*</span></label>
                 <input type="text" name="username" required minlength="3" maxlength="50" 
                     class="form-control" placeholder="Enter username">
             </div>
             
             <div class="form-group">
-                <label>Email <span style="color: #dc3545;">*</span></label>
+                <label>Email <span style="color: var(--accent-danger);">*</span></label>
                 <input type="email" name="email" required 
                     class="form-control" placeholder="Enter email address">
             </div>
@@ -272,19 +272,19 @@
             </div>
             
             <div class="form-group">
-                <label>Password <span style="color: #dc3545;">*</span></label>
+                <label>Password <span style="color: var(--accent-danger);">*</span></label>
                 <input type="password" name="password" required minlength="6" 
                     class="form-control" placeholder="Minimum 6 characters">
             </div>
             
             <div class="form-group">
-                <label>Confirm Password <span style="color: #dc3545;">*</span></label>
+                <label>Confirm Password <span style="color: var(--accent-danger);">*</span></label>
                 <input type="password" name="password_confirm" required minlength="6" 
                     class="form-control" placeholder="Confirm password">
             </div>
             
             <div class="form-group">
-                <label>Role <span style="color: #dc3545;">*</span></label>
+                <label>Role <span style="color: var(--accent-danger);">*</span></label>
                 <select name="role" required class="form-control">
                     <option value="viewer">👁️ Viewer - Read-only access</option>
                     <option value="analyst">📊 Analyst - View data & analytics, export capabilities</option>
@@ -295,11 +295,11 @@
             </div>
             
             <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button type="submit" class="btn" style="flex: 1; background: #28a745; color: white; padding: 12px;">
+                <button type="submit" class="btn" style="flex: 1; background: var(--accent-success); color: var(--text-on-accent); padding: 12px;">
                     ➕ Create User
                 </button>
                 <button type="button" class="btn" onclick="closeAddUserModal()" 
-                    style="flex: 1; background: #6c757d; color: white; padding: 12px;">
+                    style="flex: 1; background: var(--text-muted); color: var(--text-on-accent); padding: 12px;">
                     Cancel
                 </button>
             </div>
@@ -320,13 +320,13 @@
             <input type="hidden" name="user_id" id="editUserId">
             
             <div class="form-group">
-                <label>Username <span style="color: #dc3545;">*</span></label>
+                <label>Username <span style="color: var(--accent-danger);">*</span></label>
                 <input type="text" name="username" id="editUsername" required minlength="3" maxlength="50" 
                     class="form-control">
             </div>
             
             <div class="form-group">
-                <label>Email <span style="color: #dc3545;">*</span></label>
+                <label>Email <span style="color: var(--accent-danger);">*</span></label>
                 <input type="email" name="email" id="editEmail" required 
                     class="form-control">
             </div>
@@ -338,7 +338,7 @@
             </div>
             
             <div class="form-group">
-                <label>Role <span style="color: #dc3545;">*</span></label>
+                <label>Role <span style="color: var(--accent-danger);">*</span></label>
                 <select name="role" id="editRole" required class="form-control">
                     <option value="viewer">👁️ Viewer - Read-only access</option>
                     <option value="analyst">📊 Analyst - View data & analytics, export capabilities</option>
@@ -349,11 +349,11 @@
             </div>
             
             <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button type="submit" class="btn" style="flex: 1; background: #667eea; color: white; padding: 12px;">
+                <button type="submit" class="btn" style="flex: 1; background: var(--accent-primary); color: var(--text-on-accent); padding: 12px;">
                     💾 Save Changes
                 </button>
                 <button type="button" class="btn" onclick="closeEditUserModal()" 
-                    style="flex: 1; background: #6c757d; color: white; padding: 12px;">
+                    style="flex: 1; background: var(--text-muted); color: var(--text-on-accent); padding: 12px;">
                     Cancel
                 </button>
             </div>
@@ -378,23 +378,23 @@
             </p>
             
             <div class="form-group">
-                <label>New Password <span style="color: #dc3545;">*</span></label>
+                <label>New Password <span style="color: var(--accent-danger);">*</span></label>
                 <input type="password" name="new_password" required minlength="6" 
                     class="form-control" placeholder="Minimum 6 characters">
             </div>
             
             <div class="form-group">
-                <label>Confirm New Password <span style="color: #dc3545;">*</span></label>
+                <label>Confirm New Password <span style="color: var(--accent-danger);">*</span></label>
                 <input type="password" name="new_password_confirm" required minlength="6" 
                     class="form-control" placeholder="Confirm new password">
             </div>
             
             <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button type="submit" class="btn" style="flex: 1; background: #dc3545; color: white; padding: 12px;">
+                <button type="submit" class="btn" style="flex: 1; background: var(--accent-danger); color: var(--text-on-accent); padding: 12px;">
                     🔑 Reset Password
                 </button>
                 <button type="button" class="btn" onclick="closeResetPasswordModal()" 
-                    style="flex: 1; background: #6c757d; color: white; padding: 12px;">
+                    style="flex: 1; background: var(--text-muted); color: var(--text-on-accent); padding: 12px;">
                     Cancel
                 </button>
             </div>
@@ -548,27 +548,27 @@ function showFullPermissions(roleKey) {
     };
     
     const colors = {
-        'admin': '#667eea',
-        'editor': '#f59e0b',
-        'developer': '#10b981',
-        'analyst': '#06b6d4',
-        'viewer': '#6c757d'
+        'admin': 'var(--accent-primary)',
+        'editor': 'var(--accent-amber)',
+        'developer': 'var(--accent-teal)',
+        'analyst': 'var(--accent-sky)',
+        'viewer': 'var(--text-muted)'
     };
     
     document.getElementById('rolePermissionsTitle').innerHTML = 
         `${icons[roleKey] || '👤'} ${role.name} - All Permissions`;
     
     let permissionsHTML = `
-        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-            <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;"><strong>Description:</strong> ${role.description}</p>
-            <p style="margin: 0; color: #666; font-size: 14px;"><strong>Access Level:</strong> 
-                <span style="background: ${colors[roleKey]}; color: white; padding: 2px 8px; border-radius: 8px; font-size: 12px;">
+        <div style="background: var(--surface-muted); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <p style="margin: 0 0 10px 0; color: var(--text-secondary); font-size: 14px;"><strong>Description:</strong> ${role.description}</p>
+            <p style="margin: 0; color: var(--text-secondary); font-size: 14px;"><strong>Access Level:</strong> 
+                <span style="background: ${colors[roleKey]}; color: var(--text-on-accent); padding: 2px 8px; border-radius: 8px; font-size: 12px;">
                     Level ${role.level}
                 </span>
             </p>
         </div>
         
-        <h4 style="margin: 20px 0 15px 0; color: #333; font-size: 16px;">📋 Full Permissions List:</h4>
+        <h4 style="margin: 20px 0 15px 0; color: var(--text-primary); font-size: 16px;">📋 Full Permissions List:</h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
     `;
     
@@ -578,11 +578,11 @@ function showFullPermissions(roleKey) {
         ).join(' ');
         
         permissionsHTML += `
-            <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: ${hasAccess ? '#d4edda' : '#f8d7da'}; border-radius: 6px;">
-                <span style="font-size: 16px; color: ${hasAccess ? '#28a745' : '#dc3545'};">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: ${hasAccess ? 'var(--success-bg)' : 'var(--danger-bg)'}; border-radius: 6px;">
+                <span style="font-size: 16px; color: ${hasAccess ? 'var(--accent-success)' : 'var(--accent-danger)'};">
                     ${hasAccess ? '✓' : '✗'}
                 </span>
-                <span style="font-size: 13px; color: #333; font-weight: 500;">${permissionName}</span>
+                <span style="font-size: 13px; color: var(--text-primary); font-weight: 500;">${permissionName}</span>
             </div>
         `;
     }

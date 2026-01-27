@@ -278,6 +278,8 @@ function createUserSession(array $user) {
         'role' => $user['role'],
         'login_time' => time()
     ];
+    $_SESSION['session_ua'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    $_SESSION['session_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
     
     // Regenerate session ID for security
     session_regenerate_id(true);

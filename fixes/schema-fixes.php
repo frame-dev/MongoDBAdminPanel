@@ -29,16 +29,16 @@ function renderSchemaField($fieldName, $fieldInfo, $sampleSize = 100) {
     
     $html = '<div style="display: grid; grid-template-columns: 200px 1fr 150px; gap: 20px; align-items: start;">';
     $html .= '<div>';
-    $html .= '<p style="font-weight: 600; color: #333; margin-bottom: 4px;">' . htmlspecialchars($fieldName) . '</p>';
-    $html .= '<span style="background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">' . htmlspecialchars($types) . '</span>';
+    $html .= '<p style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">' . htmlspecialchars($fieldName) . '</p>';
+    $html .= '<span style="background: var(--info-bg); color: var(--info-text); padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">' . htmlspecialchars($types) . '</span>';
     $html .= '</div>';
     $html .= '<div>';
-    $html .= '<p style="color: #666; font-size: 13px; margin-bottom: 6px;">Sample values:</p>';
-    $html .= '<p style="color: #999; font-size: 12px; font-family: monospace; background: #f8f9fa; padding: 8px; border-radius: 4px;">' . htmlspecialchars($samples) . '</p>';
+    $html .= '<p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 6px;">Sample values:</p>';
+    $html .= '<p style="color: var(--text-muted); font-size: 12px; font-family: monospace; background: var(--surface-muted); padding: 8px; border-radius: 4px;">' . htmlspecialchars($samples) . '</p>';
     $html .= '</div>';
     $html .= '<div style="text-align: right;">';
-    $html .= '<p style="font-size: 24px; font-weight: bold; color: #667eea; margin-bottom: 4px;">' . $frequency . '%</p>';
-    $html .= '<p style="font-size: 11px; color: #999;">In ' . $fieldInfo['count'] . ' docs</p>';
+    $html .= '<p style="font-size: 24px; font-weight: bold; color: var(--accent-primary); margin-bottom: 4px;">' . $frequency . '%</p>';
+    $html .= '<p style="font-size: 11px; color: var(--text-muted);">In ' . $fieldInfo['count'] . ' docs</p>';
     $html .= '</div>';
     $html .= '</div>';
     

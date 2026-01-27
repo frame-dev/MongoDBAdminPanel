@@ -3,13 +3,13 @@
 
     <!-- Dangerous Operations Section -->
     <div
-        style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-left: 4px solid #dc3545;">
-        <h3 style="color: #dc3545; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+        style="background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-left: 4px solid var(--accent-danger);">
+        <h3 style="color: var(--accent-danger); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 24px;">🗑️</span> Delete All Documents
         </h3>
         <div
-            style="background: #fff3cd; padding: 12px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #ffc107;">
-            <strong style="color: #856404;">⚠️ Warning:</strong> <span style="color: #856404;">This will permanently
+            style="background: var(--warning-bg); padding: 12px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid var(--accent-warning);">
+            <strong style="color: var(--warning-text);">⚠️ Warning:</strong> <span style="color: var(--warning-text);">This will permanently
                 delete ALL documents from this collection. This action cannot be undone!</span>
         </div>
         <form method="POST">
@@ -17,7 +17,7 @@
             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
             <input type="hidden" name="collection" value="<?php echo htmlspecialchars($collectionName); ?>">
             <button type="submit" class="btn"
-                style="background: #dc3545; color: white; width: 100%; padding: 14px; font-weight: 600;"
+                style="background: var(--accent-danger); color: var(--text-on-accent); width: 100%; padding: 14px; font-weight: 600;"
                 onclick="return confirm('⚠️ FINAL WARNING: This will delete ALL <?php echo $documentCount; ?> documents from <?php echo htmlspecialchars($collectionName); ?>. This cannot be undone! Type YES to confirm.') && prompt('Type DELETE to confirm:') === 'DELETE'">⚠️
                 Delete All Documents</button>
         </form>
@@ -25,56 +25,56 @@
 
     <!-- Query History -->
     <div
-        style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-        <h3 style="color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+        style="background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+        <h3 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 24px;">📚</span> Query History
         </h3>
 
         <!-- Save Current Query -->
-        <form method="POST" style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <form method="POST" style="background: var(--success-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
             <input type="hidden" name="action" value="save_query">
             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
             <input type="hidden" name="collection" value="<?php echo htmlspecialchars($collectionName); ?>">
-            <h4 style="color: #2e7d32; margin-bottom: 12px;">💾 Save New Query</h4>
+            <h4 style="color: var(--success-text); margin-bottom: 12px;">💾 Save New Query</h4>
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
                 <div>
                     <label style="font-weight: 600; margin-bottom: 6px; display: block; font-size: 13px;">Query
                         Name:</label>
                     <input type="text" name="query_name" placeholder="e.g., Active Users" required
-                        style="width: 100%; padding: 8px; border: 2px solid #81c784; border-radius: 6px;">
+                        style="width: 100%; padding: 8px; border: 2px solid var(--accent-success-soft); border-radius: 6px;">
                 </div>
                 <div>
                     <label
                         style="font-weight: 600; margin-bottom: 6px; display: block; font-size: 13px;">Collection:</label>
                     <input type="text" name="query_collection" value="<?php echo htmlspecialchars($collectionName); ?>"
-                        required style="width: 100%; padding: 8px; border: 2px solid #81c784; border-radius: 6px;">
+                        required style="width: 100%; padding: 8px; border: 2px solid var(--accent-success-soft); border-radius: 6px;">
                 </div>
             </div>
             <div style="margin-bottom: 12px;">
                 <label style="font-weight: 600; margin-bottom: 6px; display: block; font-size: 13px;">Query
                     JSON:</label>
                 <textarea name="query_filter" placeholder='{"status": "active"}' required
-                    style="width: 100%; padding: 8px; border: 2px solid #81c784; border-radius: 6px; font-family: monospace; min-height: 60px;"></textarea>
+                    style="width: 100%; padding: 8px; border: 2px solid var(--accent-success-soft); border-radius: 6px; font-family: monospace; min-height: 60px;"></textarea>
             </div>
-            <button type="submit" class="btn" style="background: #4caf50; color: white; width: 100%; padding: 10px;">💾
+            <button type="submit" class="btn" style="background: var(--accent-success); color: var(--text-on-accent); width: 100%; padding: 10px;">💾
                 Save
                 Query</button>
         </form>
 
         <!-- Saved Queries List -->
         <?php if (isset($_SESSION['saved_queries']) && count($_SESSION['saved_queries']) > 0): ?>
-            <h4 style="margin-bottom: 15px; color: #495057;">📋 Saved Queries
+            <h4 style="margin-bottom: 15px; color: var(--text-secondary);">📋 Saved Queries
                 (<?php echo count($_SESSION['saved_queries']); ?>)
             </h4>
             <div style="max-height: 400px; overflow-y: auto;">
                 <?php foreach ($_SESSION['saved_queries'] as $query): ?>
                     <div
-                        style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid #007bff;">
+                        style="background: var(--surface-muted); padding: 15px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid var(--accent-blue);">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
                             <div>
                                 <strong
-                                    style="color: #333; font-size: 15px;"><?php echo htmlspecialchars($query['name']); ?></strong>
-                                <div style="font-size: 12px; color: #6c757d; margin-top: 4px;">
+                                    style="color: var(--text-primary); font-size: 15px;"><?php echo htmlspecialchars($query['name']); ?></strong>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
                                     📦 <?php echo htmlspecialchars($query['collection']); ?> |
                                     📅 <?php echo htmlspecialchars($query['created']); ?>
                                 </div>
@@ -85,7 +85,7 @@
                                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                     <input type="hidden" name="query_id" value="<?php echo htmlspecialchars($query['id']); ?>">
                                     <button type="submit" class="btn"
-                                        style="background: #28a745; color: white; padding: 6px 12px; font-size: 12px;">▶️
+                                        style="background: var(--accent-success); color: var(--text-on-accent); padding: 6px 12px; font-size: 12px;">▶️
                                         Load</button>
                                 </form>
                                 <form method="POST" style="display: inline;">
@@ -93,19 +93,19 @@
                                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                     <input type="hidden" name="query_id" value="<?php echo htmlspecialchars($query['id']); ?>">
                                     <button type="submit" class="btn" onclick="return confirm('Delete this query?')"
-                                        style="background: #dc3545; color: white; padding: 6px 12px; font-size: 12px;">🗑️</button>
+                                        style="background: var(--accent-danger); color: var(--text-on-accent); padding: 6px 12px; font-size: 12px;">🗑️</button>
                                 </form>
                             </div>
                         </div>
                         <code
-                            style="display: block; background: white; padding: 10px; border-radius: 4px; font-size: 12px; overflow-x: auto; color: #495057;">
+                            style="display: block; background: var(--card-bg); padding: 10px; border-radius: 4px; font-size: 12px; overflow-x: auto; color: var(--text-secondary);">
                                                                                                     <?php echo htmlspecialchars($query['filter']); ?>
                                                                                                 </code>
                     </div>
                 <?php endforeach; ?>
             </div>
         <?php else: ?>
-            <p style="color: #6c757d; font-style: italic; text-align: center; padding: 20px;">No saved queries yet. Save
+            <p style="color: var(--text-muted); font-style: italic; text-align: center; padding: 20px;">No saved queries yet. Save
                 your
                 frequently used queries above!</p>
         <?php endif; ?>
@@ -131,7 +131,7 @@
                         style="width: 100%; padding: 10px; border: 2px solid var(--input-border); background: var(--input-bg); color: var(--text-primary); border-radius: 6px; min-height: 100px; font-family: 'Courier New', monospace;"></textarea>
                 </div>
                 <button type="submit" class="btn"
-                    style="background: #28a745; color: white; width: 100%; padding: 10px;">💾 Save Template</button>
+                    style="background: var(--accent-success); color: var(--text-on-accent); width: 100%; padding: 10px;">💾 Save Template</button>
             </form>
 
             <?php
@@ -147,7 +147,7 @@
                         </h4>
                         <?php foreach ($savedTemplates as $template): ?>
                             <div
-                                style="background: var(--table-header-bg); padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #667eea;">
+                                style="background: var(--table-header-bg); padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid var(--accent-primary);">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <strong style="color: var(--text-primary); font-size: 13px;">
                                         📄 <?php echo htmlspecialchars($template->name); ?>
@@ -155,7 +155,7 @@
                                     <div style="display: flex; gap: 6px;">
                                         <button type="button" class="btn"
                                             onclick="loadTemplate('<?php echo htmlspecialchars(json_encode($template->data), ENT_QUOTES); ?>'); return false;"
-                                            style="background: #17a2b8; color: white; padding: 4px 10px; font-size: 11px;">
+                                            style="background: var(--accent-info); color: var(--text-on-accent); padding: 4px 10px; font-size: 11px;">
                                             📋 Use
                                         </button>
                                         <form method="POST" style="display: inline;">
@@ -164,7 +164,7 @@
                                             <input type="hidden" name="template_name"
                                                 value="<?php echo htmlspecialchars($template->name); ?>">
                                             <button type="submit" class="btn" onclick="return confirm('Delete this template?')"
-                                                style="background: #dc3545; color: white; padding: 4px 10px; font-size: 11px;">
+                                                style="background: var(--accent-danger); color: var(--text-on-accent); padding: 4px 10px; font-size: 11px;">
                                                 🗑️
                                             </button>
                                         </form>
@@ -196,7 +196,7 @@
                         style="width: 100%; padding: 10px; border: 2px solid var(--input-border); background: var(--input-bg); color: var(--text-primary); border-radius: 6px;">
                 </div>
                 <button type="submit" class="btn"
-                    style="background: #667eea; color: white; width: 100%; padding: 10px;">📈 Analyze</button>
+                    style="background: var(--accent-primary); color: var(--text-on-accent); width: 100%; padding: 10px;">📈 Analyze</button>
             </form>
 
             <?php if (isset($_SESSION['field_stats'])): ?>
@@ -211,7 +211,7 @@
                             <span
                                 style="color: var(--text-primary);"><?php echo htmlspecialchars($stat['_id'] ?? 'null'); ?></span>
                             <span
-                                style="background: #667eea; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;"><?php echo $stat['count'] ?? 0; ?></span>
+                                style="background: var(--accent-primary); color: var(--text-on-accent); padding: 2px 8px; border-radius: 4px; font-size: 12px;"><?php echo $stat['count'] ?? 0; ?></span>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -235,7 +235,7 @@
                         style="width: 100%; padding: 10px; border: 2px solid var(--input-border); background: var(--input-bg); color: var(--text-primary); border-radius: 6px; min-height: 120px; font-family: 'Courier New', monospace;"></textarea>
                 </div>
                 <button type="submit" class="btn"
-                    style="background: #9c27b0; color: white; width: 100%; padding: 10px;">🔢 Run
+                    style="background: var(--accent-purple); color: var(--text-on-accent); width: 100%; padding: 10px;">🔢 Run
                     Aggregation</button>
             </form>
             <?php if (isset($_SESSION['aggregation_result'])): ?>
@@ -272,7 +272,7 @@
                         unique</label>
                 </div>
                 <button type="submit" class="btn"
-                    style="background: #ff5722; color: white; width: 100%; padding: 10px;">🎯 Create Index</button>
+                    style="background: var(--accent-orange); color: var(--text-on-accent); width: 100%; padding: 10px;">🎯 Create Index</button>
             </form>
         </div>
     </div>
@@ -302,7 +302,7 @@
                         style="width: 100%; padding: 10px; border: 2px solid var(--input-border); background: var(--input-bg); color: var(--text-primary); border-radius: 6px;">
                 </div>
                 <button type="submit" class="btn"
-                    style="background: #00bcd4; color: white; width: 100%; padding: 10px;">📤 Export as
+                    style="background: var(--accent-cyan); color: var(--text-on-accent); width: 100%; padding: 10px;">📤 Export as
                     JSON</button>
             </form>
         </div>
@@ -339,7 +339,7 @@
                     </p>
                 </div>
                 <button type="submit" class="btn"
-                    style="background: #f44336; color: white; width: 100%; padding: 10px; margin-top: 10px;">🔄
+                    style="background: var(--accent-danger); color: var(--text-on-accent); width: 100%; padding: 10px; margin-top: 10px;">🔄
                     Transform Field</button>
             </form>
         </div>
@@ -360,7 +360,7 @@
                 <button type="button"
                     onclick="var field = prompt('Enter field name to check for duplicates:', 'email'); if(field) { document.getElementById('dup_field').value = field; this.form.submit(); }"
                     class="btn"
-                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; width: 100%; padding: 15px; font-size: 14px; font-weight: 600;">
+                    style="background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%); color: var(--text-on-accent); width: 100%; padding: 15px; font-size: 14px; font-weight: 600;">
                     🔍 Find Duplicates
                 </button>
             </form>
@@ -369,7 +369,7 @@
                 <input type="hidden" name="collection" value="<?php echo htmlspecialchars($collectionName); ?>">
                 <input type="hidden" name="action" value="orphanedfields">
                 <button type="submit" class="btn"
-                    style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; width: 100%; padding: 15px; font-size: 14px; font-weight: 600;">
+                    style="background: linear-gradient(135deg, var(--gradient-pink-start) 0%, var(--gradient-pink-end) 100%); color: var(--text-on-accent); width: 100%; padding: 15px; font-size: 14px; font-weight: 600;">
                     🗑️ Find Orphaned Fields
                 </button>
             </form>
@@ -378,7 +378,7 @@
                 <input type="hidden" name="collection" value="<?php echo htmlspecialchars($collectionName); ?>">
                 <input type="hidden" name="action" value="dataintegrity">
                 <button type="submit" class="btn"
-                    style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; width: 100%; padding: 15px; font-size: 14px; font-weight: 600;">
+                    style="background: linear-gradient(135deg, var(--gradient-green-start) 0%, var(--gradient-green-end) 100%); color: var(--text-on-accent); width: 100%; padding: 15px; font-size: 14px; font-weight: 600;">
                     ✓ Check Data Integrity
                 </button>
             </form>
@@ -387,7 +387,7 @@
                 <input type="hidden" name="collection" value="<?php echo htmlspecialchars($collectionName); ?>">
                 <input type="hidden" name="action" value="sizestats">
                 <button type="submit" class="btn"
-                    style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; width: 100%; padding: 15px; font-size: 14px; font-weight: 600;">
+                    style="background: linear-gradient(135deg, var(--gradient-sunset-start) 0%, var(--gradient-sunset-end) 100%); color: var(--text-on-accent); width: 100%; padding: 15px; font-size: 14px; font-weight: 600;">
                     📏 Collection Size Stats
                 </button>
             </form>

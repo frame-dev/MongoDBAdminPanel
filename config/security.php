@@ -21,8 +21,196 @@ function getSetting($key, $default = null) {
     return array_key_exists($key, $_SESSION['settings']) ? $_SESSION['settings'][$key] : $default;
 }
 
+function markSettingsUpdated(): void {
+    $_SESSION['settings_updated_at'] = time();
+}
+
+function getDatabaseFromSession() {
+    if (isset($GLOBALS['database']) && $GLOBALS['database'] !== null) {
+        return $GLOBALS['database'];
+    }
+    if (!isset($_SESSION['mongo_connection']) || !is_array($_SESSION['mongo_connection'])) {
+        return null;
+    }
+    $conn = $_SESSION['mongo_connection'];
+    $hostName = $conn['hostname'] ?? null;
+    $port = $conn['port'] ?? null;
+    $db = $conn['database'] ?? null;
+    if (!$hostName || !$port || !$db) {
+        return null;
+    }
+    $user = $conn['username'] ?? null;
+    $pass = $conn['password'] ?? null;
+    if ($user && $pass) {
+        $uri = "mongodb://$user:$pass@$hostName:$port/$db?authSource=$db";
+    } else {
+        $uri = "mongodb://$hostName:$port/$db";
+    }
+    try {
+        $client = new \MongoDB\Client($uri);
+        return $client->selectDatabase($db);
+    } catch (Exception $e) {
+        error_log('Error connecting for app settings: ' . $e->getMessage());
+    }
+    return null;
+}
+
+function hasGlobalSettingsDoc(): bool {
+    $database = getDatabaseFromSession();
+    if ($database === null) {
+        return false;
+    }
+    try {
+        $collection = $database->getCollection('_app_settings');
+        $doc = $collection->findOne(['_id' => 'global'], ['projection' => ['_id' => 1]]);
+        return $doc !== null;
+    } catch (Exception $e) {
+        error_log('Error checking app settings doc: ' . $e->getMessage());
+    }
+    return false;
+}
+
+// Default settings for the application
+function getDefaultSettings(): array {
+    return [
+        'items_per_page' => 50,
+        'date_format' => 'Y-m-d H:i:s',
+        'theme' => 'light',
+        'default_sort_field' => '_id',
+        'default_sort_order' => '-1',
+        'default_view_mode' => 'table',
+        'syntax_highlighting' => true,
+        'pretty_print' => true,
+        'show_objectid_as_string' => false,
+        'collapsible_json' => false,
+        'zebra_stripes' => true,
+        'row_hover' => true,
+        'fixed_header' => false,
+        'compact_mode' => false,
+        'preview_length' => 80,
+        'key_fields_priority' => 'name,title,email,status,type,category',
+        'query_timeout' => 30,
+        'max_results' => 1000,
+        'query_default_limit' => 50,
+        'query_history_limit' => 50,
+        'memory_limit' => 256,
+        'cache_ttl' => 15,
+        'query_cache' => true,
+        'auto_indexes' => true,
+        'schema_cache' => false,
+        'lazy_load' => false,
+        'schema_sample_size' => 100,
+        'editor_theme' => 'monokai',
+        'editor_font_size' => 14,
+        'line_numbers' => true,
+        'auto_format' => true,
+        'validate_on_type' => false,
+        'auto_refresh' => false,
+        'refresh_interval' => 30,
+        'confirm_deletions' => true,
+        'show_tooltips' => true,
+        'keyboard_shortcuts' => true,
+        'save_scroll_position' => false,
+        'show_success_messages' => true,
+        'show_error_messages' => true,
+        'show_warning_messages' => true,
+        'auto_dismiss_alerts' => true,
+        'alert_duration' => 5,
+        'enable_sounds' => false,
+        'desktop_notifications' => false,
+        'animation_effects' => true,
+        'loading_indicators' => true,
+        'progress_bars' => true,
+        'default_export_format' => 'json',
+        'export_filename_prefix' => 'export',
+        'csv_delimiter' => ';',
+        'csv_include_bom' => true,
+        'include_metadata' => true,
+        'compress_exports' => false,
+        'timestamp_exports' => true,
+        'auto_backup' => false,
+        'backup_frequency' => 'weekly',
+        'backup_retention' => 30,
+        'csrf_enabled' => true,
+        'csrf_token_lifetime' => 60,
+        'session_validation_enabled' => true,
+        'ip_tracking_enabled' => true,
+        'rate_limit_enabled' => true,
+        'rate_limit_requests' => 30,
+        'rate_limit_lockout' => 60,
+        'enable_idle_timeout' => false,
+        'idle_timeout_minutes' => 30,
+        'log_all_actions' => true,
+        'log_failed_logins' => true,
+        'log_security_events' => true
+    ];
+}
+
+// Load global settings from MongoDB (if connected)
+function loadGlobalSettingsFromDb(): bool {
+    $database = getDatabaseFromSession();
+    if ($database === null) {
+        return false;
+    }
+    try {
+        $collection = $database->getCollection('_app_settings');
+        $doc = $collection->findOne(['_id' => 'global']);
+        if ($doc && isset($doc['settings'])) {
+            $dbUpdatedAt = 0;
+            if (isset($doc['updated_at']) && $doc['updated_at'] instanceof \MongoDB\BSON\UTCDateTime) {
+                $dbUpdatedAt = (int) floor($doc['updated_at']->toDateTime()->getTimestamp());
+            }
+            $sessionUpdatedAt = (int) ($_SESSION['settings_updated_at'] ?? 0);
+            if (is_array($_SESSION['settings']) && !empty($_SESSION['settings']) &&
+                $sessionUpdatedAt >= $dbUpdatedAt) {
+                return true;
+            }
+            $defaults = getDefaultSettings();
+            $settings = $doc['settings'];
+            if ($settings instanceof \MongoDB\Model\BSONDocument) {
+                $settings = $settings->getArrayCopy();
+            } elseif (is_object($settings)) {
+                $settings = json_decode(json_encode($settings), true);
+            }
+            if (is_array($settings)) {
+                $_SESSION['settings'] = array_merge($defaults, $settings);
+                if ($dbUpdatedAt > 0) {
+                    $_SESSION['settings_updated_at'] = $dbUpdatedAt;
+                }
+                return true;
+            }
+        }
+    } catch (Exception $e) {
+        error_log('Error loading app settings: ' . $e->getMessage());
+    }
+    return false;
+}
+
+// Save global settings to MongoDB (if connected)
+function saveGlobalSettingsToDb(array $settings): bool {
+    $database = getDatabaseFromSession();
+    if ($database === null) {
+        return false;
+    }
+    try {
+        $collection = $database->getCollection('_app_settings');
+        $collection->updateOne(
+            ['_id' => 'global'],
+            ['$set' => ['settings' => $settings, 'updated_at' => new MongoDB\BSON\UTCDateTime(time() * 1000)]],
+            ['upsert' => true]
+        );
+        return true;
+    } catch (Exception $e) {
+        error_log('Error saving app settings: ' . $e->getMessage());
+    }
+    return false;
+}
+
 // Generate CSRF token
 function generateCSRFToken() {
+    if (!getSetting('csrf_enabled', true)) {
+        return $_SESSION['csrf_token'] ?? '';
+    }
     $lifetimeMinutes = (int) getSetting('csrf_token_lifetime', 60);
     $lifetimeMinutes = max(10, min(1440, $lifetimeMinutes));
     $expiresIn = $lifetimeMinutes * 60;
@@ -37,6 +225,9 @@ function generateCSRFToken() {
 
 // Verify CSRF token
 function verifyCSRFToken($token) {
+    if (!getSetting('csrf_enabled', true)) {
+        return true;
+    }
     if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
         return false;
     }

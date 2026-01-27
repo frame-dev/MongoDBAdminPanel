@@ -30,7 +30,7 @@ require_once 'config/security.php';
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -39,7 +39,7 @@ require_once 'config/security.php';
         }
         
         .connection-container {
-            background: white;
+            background: var(--card-bg);
             border-radius: 12px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             padding: 40px;
@@ -48,13 +48,13 @@ require_once 'config/security.php';
         }
         
         .connection-container h1 {
-            color: #333;
+            color: var(--text-primary);
             margin-bottom: 10px;
             font-size: 28px;
         }
         
         .connection-container p {
-            color: #666;
+            color: var(--text-secondary);
             margin-bottom: 30px;
             font-size: 14px;
         }
@@ -65,7 +65,7 @@ require_once 'config/security.php';
         
         .form-group label {
             display: block;
-            color: #333;
+            color: var(--text-primary);
             font-weight: 600;
             margin-bottom: 8px;
             font-size: 14px;
@@ -74,7 +74,7 @@ require_once 'config/security.php';
         .form-group input {
             width: 100%;
             padding: 12px;
-            border: 2px solid #ddd;
+            border: 2px solid var(--border-color);
             border-radius: 6px;
             font-size: 14px;
             transition: border-color 0.3s;
@@ -82,14 +82,14 @@ require_once 'config/security.php';
         
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--accent-primary);
         }
         
         .btn {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            color: var(--text-on-accent);
             border: none;
             border-radius: 6px;
             font-size: 16px;
@@ -103,29 +103,29 @@ require_once 'config/security.php';
         }
         
         .error-message {
-            background: #f8d7da;
-            color: #721c24;
+            background: var(--danger-bg);
+            color: var(--danger-text);
             padding: 12px;
             border-radius: 6px;
             margin-bottom: 20px;
-            border: 1px solid #f5c6cb;
+            border: 1px solid var(--danger-border);
         }
         
         .help-section {
             margin-top: 30px;
             padding-top: 30px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--border-color);
         }
         
         .help-section h3 {
-            color: #333;
+            color: var(--text-primary);
             font-size: 14px;
             margin-bottom: 15px;
         }
         
         .help-tips {
             font-size: 13px;
-            color: #666;
+            color: var(--text-secondary);
             line-height: 1.6;
         }
         
@@ -134,7 +134,7 @@ require_once 'config/security.php';
         }
         
         .help-tips strong {
-            color: #333;
+            color: var(--text-primary);
         }
     </style>
 </head>

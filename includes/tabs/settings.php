@@ -7,33 +7,33 @@
 
         <!-- Connection Settings -->
         <div
-            style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <h3 style="color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            style="background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h3 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 24px;">🔌</span> Connection Settings
             </h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
-                    <h4 style="color: #667eea; margin-bottom: 15px;">Current Connection</h4>
+                <div style="background: var(--surface-muted); padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-primary);">
+                    <h4 style="color: var(--accent-primary); margin-bottom: 15px;">Current Connection</h4>
                     <div style="display: grid; gap: 10px; font-size: 14px;">
                         <div><strong>Host:</strong> <span
-                                style="font-family: monospace; color: #666;"><?php echo htmlspecialchars($_SESSION['hostname'] ?? 'localhost'); ?></span>
+                                style="font-family: monospace; color: var(--text-secondary);"><?php echo htmlspecialchars($_SESSION['hostname'] ?? 'localhost'); ?></span>
                         </div>
                         <div><strong>Port:</strong> <span
-                                style="font-family: monospace; color: #666;"><?php echo htmlspecialchars($_SESSION['port'] ?? '27017'); ?></span>
+                                style="font-family: monospace; color: var(--text-secondary);"><?php echo htmlspecialchars($_SESSION['port'] ?? '27017'); ?></span>
                         </div>
                         <div><strong>Database:</strong> <span
-                                style="font-family: monospace; color: #28a745;"><?php echo htmlspecialchars($_SESSION['database'] ?? 'N/A'); ?></span>
+                                style="font-family: monospace; color: var(--accent-success);"><?php echo htmlspecialchars($_SESSION['database'] ?? 'N/A'); ?></span>
                         </div>
                         <div><strong>Collection:</strong> <span
-                                style="font-family: monospace; color: #17a2b8;"><?php echo htmlspecialchars($_SESSION['collection'] ?? 'N/A'); ?></span>
+                                style="font-family: monospace; color: var(--accent-info);"><?php echo htmlspecialchars($_SESSION['collection'] ?? 'N/A'); ?></span>
                         </div>
                         <div><strong>Username:</strong> <span
-                                style="font-family: monospace; color: #666;"><?php echo !empty($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : '<i>None</i>'; ?></span>
+                                style="font-family: monospace; color: var(--text-secondary);"><?php echo !empty($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : '<i>None</i>'; ?></span>
                         </div>
                     </div>
                 </div>
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745;">
-                    <h4 style="color: #28a745; margin-bottom: 15px;">Connection Options</h4>
+                <div style="background: var(--surface-muted); padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-success);">
+                    <h4 style="color: var(--accent-success); margin-bottom: 15px;">Connection Options</h4>
                     <div style="display: grid; gap: 8px; font-size: 13px;">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                             <input type="checkbox" checked disabled>
@@ -52,8 +52,8 @@
                             <span>SSL/TLS Encryption</span>
                         </label>
                     </div>
-                    <a href="templates/connection.php" class="btn"
-                        style="display: inline-block; margin-top: 15px; background: #28a745; color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px; font-size: 13px;">🔄
+                    <a href="?disconnect=1" class="btn"
+                        style="display: inline-block; margin-top: 15px; background: var(--accent-success); color: var(--text-on-accent); padding: 8px 16px; text-decoration: none; border-radius: 6px; font-size: 13px;">🔄
                         Change Connection</a>
                 </div>
             </div>
@@ -61,8 +61,8 @@
 
         <!-- Display Preferences -->
         <div
-            style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <h3 style="color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            style="background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h3 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 24px;">🎨</span> Display Preferences
             </h3>
             <form method="POST">
@@ -72,7 +72,7 @@
                     <div>
                         <label style="font-weight: 600; margin-bottom: 8px; display: block;">Items per Page:</label>
                         <select name="items_per_page"
-                            style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                            style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 6px;">
                             <option value="25" <?php echo ($_SESSION['settings']['items_per_page'] ?? 50) == 25 ? 'selected' : ''; ?>>25</option>
                             <option value="50" <?php echo ($_SESSION['settings']['items_per_page'] ?? 50) == 50 ? 'selected' : ''; ?>>50</option>
                             <option value="100" <?php echo ($_SESSION['settings']['items_per_page'] ?? 50) == 100 ? 'selected' : ''; ?>>100</option>
@@ -81,40 +81,46 @@
                     </div>
                     <div>
                         <label style="font-weight: 600; margin-bottom: 8px; display: block;">Date Format:</label>
-                        <select name="date_format"
-                            style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
-                            <option value="Y-m-d H:i:s" <?php echo ($_SESSION['settings']['date_format'] ?? 'Y-m-d H:i:s') == 'Y-m-d H:i:s' ? 'selected' : ''; ?>>YYYY-MM-DD HH:MM:SS</option>
-                            <option value="d/m/Y H:i" <?php echo ($_SESSION['settings']['date_format'] ?? '') == 'd/m/Y H:i' ? 'selected' : ''; ?>>DD/MM/YYYY HH:MM</option>
-                            <option value="m/d/Y h:i A" <?php echo ($_SESSION['settings']['date_format'] ?? '') == 'm/d/Y h:i A' ? 'selected' : ''; ?>>MM/DD/YYYY HH:MM AM/PM</option>
-                            <option value="relative" <?php echo ($_SESSION['settings']['date_format'] ?? '') == 'relative' ? 'selected' : ''; ?>>Relative (2 hours ago)</option>
-                        </select>
+                        <label>
+                            <select name="date_format"
+                                style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 6px;">
+                                <option value="Y-m-d H:i:s" <?php echo ($_SESSION['settings']['date_format'] ?? 'Y-m-d H:i:s') == 'Y-m-d H:i:s' ? 'selected' : ''; ?>>YYYY-MM-DD HH:MM:SS</option>
+                                <option value="d/m/Y H:i" <?php echo ($_SESSION['settings']['date_format'] ?? '') == 'd/m/Y H:i' ? 'selected' : ''; ?>>DD/MM/YYYY HH:MM</option>
+                                <option value="m/d/Y h:i A" <?php echo ($_SESSION['settings']['date_format'] ?? '') == 'm/d/Y h:i A' ? 'selected' : ''; ?>>MM/DD/YYYY HH:MM AM/PM</option>
+                                <option value="relative" <?php echo ($_SESSION['settings']['date_format'] ?? '') == 'relative' ? 'selected' : ''; ?>>Relative (2 hours ago)</option>
+                            </select>
+                        </label>
                     </div>
                     <div>
                         <label style="font-weight: 600; margin-bottom: 8px; display: block;">Theme:</label>
-                        <select name="theme"
-                            style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
-                            <option value="light" <?php echo ($_SESSION['settings']['theme'] ?? 'light') == 'light' ? 'selected' : ''; ?>>Light</option>
-                            <option value="dark" <?php echo ($_SESSION['settings']['theme'] ?? 'light') == 'dark' ? 'selected' : ''; ?>>Dark</option>
-                            <option value="auto" <?php echo ($_SESSION['settings']['theme'] ?? 'light') == 'auto' ? 'selected' : ''; ?>>Auto (System)</option>
-                        </select>
+                        <label>
+                            <select name="theme"
+                                style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 6px;">
+                                <option value="light" <?php echo ($_SESSION['settings']['theme'] ?? 'light') == 'light' ? 'selected' : ''; ?>>Light</option>
+                                <option value="dark" <?php echo ($_SESSION['settings']['theme'] ?? 'light') == 'dark' ? 'selected' : ''; ?>>Dark</option>
+                                <option value="auto" <?php echo ($_SESSION['settings']['theme'] ?? 'light') == 'auto' ? 'selected' : ''; ?>>Auto (System)</option>
+                            </select>
+                        </label>
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 20px;">
                     <div>
                         <label style="font-weight: 600; margin-bottom: 8px; display: block;">Default Sort Field:</label>
-                        <select name="default_sort_field"
-                            style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
-                            <option value="_id" <?php echo ($_SESSION['settings']['default_sort_field'] ?? '_id') == '_id' ? 'selected' : ''; ?>>_id</option>
-                            <option value="created_at" <?php echo ($_SESSION['settings']['default_sort_field'] ?? '') == 'created_at' ? 'selected' : ''; ?>>created_at</option>
-                            <option value="updated_at" <?php echo ($_SESSION['settings']['default_sort_field'] ?? '') == 'updated_at' ? 'selected' : ''; ?>>updated_at</option>
-                            <option value="name" <?php echo ($_SESSION['settings']['default_sort_field'] ?? '') == 'name' ? 'selected' : ''; ?>>name</option>
-                            <option value="email" <?php echo ($_SESSION['settings']['default_sort_field'] ?? '') == 'email' ? 'selected' : ''; ?>>email</option>
-                        </select>
+                        <label>
+                            <select name="default_sort_field"
+                                style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 6px;">
+                                <option value="_id" <?php echo ($_SESSION['settings']['default_sort_field'] ?? '_id') == '_id' ? 'selected' : ''; ?>>_id</option>
+                                <option value="created_at" <?php echo ($_SESSION['settings']['default_sort_field'] ?? '') == 'created_at' ? 'selected' : ''; ?>>created_at</option>
+                                <option value="updated_at" <?php echo ($_SESSION['settings']['default_sort_field'] ?? '') == 'updated_at' ? 'selected' : ''; ?>>updated_at</option>
+                                <option value="name" <?php echo ($_SESSION['settings']['default_sort_field'] ?? '') == 'name' ? 'selected' : ''; ?>>name</option>
+                                <option value="email" <?php echo ($_SESSION['settings']['default_sort_field'] ?? '') == 'email' ? 'selected' : ''; ?>>email</option>
+                            </select>
+                        </label>
                     </div>
                     <div>
                         <label style="font-weight: 600; margin-bottom: 8px; display: block;">Default Sort Order:</label>
                         <select name="default_sort_order"
-                            style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                            style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 6px;">
                             <option value="-1" <?php echo ($_SESSION['settings']['default_sort_order'] ?? '-1') == '-1' ? 'selected' : ''; ?>>Descending</option>
                             <option value="1" <?php echo ($_SESSION['settings']['default_sort_order'] ?? '-1') == '1' ? 'selected' : ''; ?>>Ascending</option>
                         </select>
@@ -122,10 +128,25 @@
                     <div>
                         <label style="font-weight: 600; margin-bottom: 8px; display: block;">Default View Mode:</label>
                         <select name="default_view_mode"
-                            style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                            style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 6px;">
                             <option value="table" <?php echo ($_SESSION['settings']['default_view_mode'] ?? 'table') == 'table' ? 'selected' : ''; ?>>Table</option>
                             <option value="grid" <?php echo ($_SESSION['settings']['default_view_mode'] ?? 'table') == 'grid' ? 'selected' : ''; ?>>Grid</option>
                         </select>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                    <div>
+                        <label style="font-weight: 600; margin-bottom: 8px; display: block;">Preview Length (chars):</label>
+                        <input type="number" name="preview_length"
+                            value="<?php echo $_SESSION['settings']['preview_length'] ?? 80; ?>" min="20" max="200"
+                            style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 6px;">
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; margin-bottom: 8px; display: block;">Key Fields Priority:</label>
+                        <input type="text" name="key_fields_priority"
+                            value="<?php echo $_SESSION['settings']['key_fields_priority'] ?? 'name,title,email,status,type,category'; ?>"
+                            style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 6px;">
+                        <small style="color: var(--text-muted); font-size: 12px;">Comma-separated field names used for previews.</small>
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
@@ -173,12 +194,12 @@
                     </div>
                 </div>
                 <button type="submit" class="btn"
-                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; margin-top: 20px;"
+                    style="background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%); color: var(--text-on-accent); padding: 12px 30px; margin-top: 20px;"
                     <?php echo !$canEditSettings ? 'disabled title="You do not have permission to edit settings"' : ''; ?>>💾
                     Save Display Settings</button>
             </form>
             <?php if (!$canEditSettings): ?>
-                <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 6px; font-size: 13px; color: #856404;">
+                <div style="margin-top: 15px; padding: 12px; background: var(--warning-bg); border-left: 4px solid var(--accent-warning); border-radius: 6px; font-size: 13px; color: var(--warning-text);">
                     ⚠️ You have read-only access to settings. Contact an administrator to modify these values.
                 </div>
             <?php endif; ?>
@@ -186,16 +207,16 @@
 
         <!-- Performance Settings -->
         <div
-            style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <h3 style="color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            style="background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h3 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 24px;">⚡</span> Performance Settings
             </h3>
             <form method="POST">
                 <input type="hidden" name="action" value="save_performance_settings">
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                        <h4 style="color: #333; margin-bottom: 15px;">Query Optimization</h4>
+                    <div style="background: var(--surface-muted); padding: 20px; border-radius: 8px;">
+                        <h4 style="color: var(--text-primary); margin-bottom: 15px;">Query Optimization</h4>
                         <div style="display: grid; gap: 12px;">
                             <div>
                                 <label
@@ -204,7 +225,7 @@
                                 <input type="number" name="query_timeout"
                                     value="<?php echo $_SESSION['settings']['query_timeout'] ?? 30; ?>" min="5"
                                     max="300"
-                                    style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                    style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                             </div>
                             <div>
                                 <label
@@ -213,7 +234,7 @@
                                 <input type="number" name="max_results"
                                     value="<?php echo $_SESSION['settings']['max_results'] ?? 1000; ?>" min="100"
                                     max="10000"
-                                    style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                    style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                             </div>
                             <div>
                                 <label
@@ -222,7 +243,16 @@
                                 <input type="number" name="query_default_limit"
                                     value="<?php echo $_SESSION['settings']['query_default_limit'] ?? 50; ?>" min="10"
                                     max="10000"
-                                    style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                    style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
+                            </div>
+                            <div>
+                                <label
+                                    style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 14px;">Query
+                                    History Limit:</label>
+                                <input type="number" name="query_history_limit"
+                                    value="<?php echo $_SESSION['settings']['query_history_limit'] ?? 50; ?>" min="5"
+                                    max="200"
+                                    style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                             </div>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="checkbox" name="query_cache" value="1" <?php echo ($_SESSION['settings']['query_cache'] ?? true) ? 'checked' : ''; ?>>
@@ -234,8 +264,8 @@
                             </label>
                         </div>
                     </div>
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                        <h4 style="color: #333; margin-bottom: 15px;">Memory & Cache</h4>
+                    <div style="background: var(--surface-muted); padding: 20px; border-radius: 8px;">
+                        <h4 style="color: var(--text-primary); margin-bottom: 15px;">Memory & Cache</h4>
                         <div style="display: grid; gap: 12px;">
                             <div>
                                 <label
@@ -244,7 +274,7 @@
                                 <input type="number" name="memory_limit"
                                     value="<?php echo $_SESSION['settings']['memory_limit'] ?? 256; ?>" min="128"
                                     max="2048"
-                                    style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                    style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                             </div>
                             <div>
                                 <label
@@ -252,7 +282,7 @@
                                     TTL (minutes):</label>
                                 <input type="number" name="cache_ttl"
                                     value="<?php echo $_SESSION['settings']['cache_ttl'] ?? 15; ?>" min="1" max="1440"
-                                    style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                    style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                             </div>
                             <div>
                                 <label
@@ -261,7 +291,7 @@
                                 <input type="number" name="schema_sample_size"
                                     value="<?php echo $_SESSION['settings']['schema_sample_size'] ?? 100; ?>" min="10"
                                     max="500"
-                                    style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                    style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                             </div>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="checkbox" name="schema_cache" value="1" <?php echo ($_SESSION['settings']['schema_cache'] ?? false) ? 'checked' : ''; ?>>
@@ -275,7 +305,7 @@
                     </div>
                 </div>
                 <button type="submit" class="btn"
-                    style="background: #ffc107; color: #333; padding: 12px 30px; margin-top: 20px;">⚡ Save
+                    style="background: var(--accent-warning); color: var(--text-primary); padding: 12px 30px; margin-top: 20px;">⚡ Save
                     Performance
                     Settings</button>
             </form>
@@ -283,8 +313,8 @@
 
         <!-- Security Settings -->
         <div
-            style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <h3 style="color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            style="background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h3 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 24px;">🔒</span> Security Settings
             </h3>
             <form method="POST">
@@ -292,64 +322,77 @@
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <div
-                        style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #ffc107;">
-                        <h4 style="color: #856404; margin-bottom: 15px;">CSRF Protection</h4>
+                        style="background: var(--warning-bg); padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-warning);">
+                        <h4 style="color: var(--warning-text); margin-bottom: 15px;">CSRF Protection</h4>
                         <div style="display: grid; gap: 10px;">
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                <input type="checkbox" checked disabled>
+                                <input type="checkbox" name="csrf_enabled" value="1" <?php echo ($_SESSION['settings']['csrf_enabled'] ?? true) ? 'checked' : ''; ?>>
                                 <span style="font-size: 14px;">✅ CSRF Tokens Enabled</span>
                             </label>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                <input type="checkbox" checked disabled>
+                                <input type="checkbox" name="session_validation_enabled" value="1" <?php echo ($_SESSION['settings']['session_validation_enabled'] ?? true) ? 'checked' : ''; ?>>
                                 <span style="font-size: 14px;">✅ Session Validation</span>
                             </label>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                <input type="checkbox" checked disabled>
+                                <input type="checkbox" name="ip_tracking_enabled" value="1" <?php echo ($_SESSION['settings']['ip_tracking_enabled'] ?? true) ? 'checked' : ''; ?>>
                                 <span style="font-size: 14px;">✅ IP Address Tracking</span>
                             </label>
-                            <div style="margin-top: 10px; padding: 10px; background: white; border-radius: 6px;">
+                            <div style="margin-top: 10px; padding: 10px; background: var(--card-bg); border-radius: 6px;">
                                 <label
                                     style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 13px;">Token
                                     Lifetime (minutes):</label>
                                 <input type="number" name="csrf_token_lifetime"
                                     value="<?php echo $_SESSION['settings']['csrf_token_lifetime'] ?? 60; ?>" min="10"
                                     max="1440"
-                                    style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                    style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                             </div>
                         </div>
                     </div>
                     <div
-                        style="background: #f8d7da; padding: 20px; border-radius: 8px; border-left: 4px solid #dc3545;">
-                        <h4 style="color: #721c24; margin-bottom: 15px;">Rate Limiting</h4>
+                        style="background: var(--danger-bg); padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-danger);">
+                        <h4 style="color: var(--danger-text); margin-bottom: 15px;">Rate Limiting</h4>
                         <div style="display: grid; gap: 10px;">
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                <input type="checkbox" checked disabled>
+                                <input type="checkbox" name="rate_limit_enabled" value="1" <?php echo ($_SESSION['settings']['rate_limit_enabled'] ?? true) ? 'checked' : ''; ?>>
                                 <span style="font-size: 14px;">✅ Rate Limiting Active</span>
                             </label>
-                            <div style="background: white; padding: 10px; border-radius: 6px; margin-top: 5px;">
+                            <div style="background: var(--card-bg); padding: 10px; border-radius: 6px; margin-top: 5px;">
                                 <label
                                     style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 13px;">Max
                                     Requests/Minute:</label>
                                 <input type="number" name="rate_limit_requests"
                                     value="<?php echo $_SESSION['settings']['rate_limit_requests'] ?? 30; ?>" min="10"
                                     max="1000"
-                                    style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                    style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                             </div>
-                            <div style="background: white; padding: 10px; border-radius: 6px;">
+                            <div style="background: var(--card-bg); padding: 10px; border-radius: 6px;">
                                 <label
                                     style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 13px;">Lockout
                                     Duration (seconds):</label>
                                 <input type="number" name="rate_limit_lockout"
                                     value="<?php echo $_SESSION['settings']['rate_limit_lockout'] ?? 60; ?>" min="30"
                                     max="3600"
-                                    style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                    style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
+                            </div>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" name="enable_idle_timeout" value="1" <?php echo ($_SESSION['settings']['enable_idle_timeout'] ?? false) ? 'checked' : ''; ?>>
+                                <span style="font-size: 14px;">Enable idle session timeout</span>
+                            </label>
+                            <div style="background: var(--card-bg); padding: 10px; border-radius: 6px;">
+                                <label
+                                    style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 13px;">Idle
+                                    Timeout (minutes):</label>
+                                <input type="number" name="idle_timeout_minutes"
+                                    value="<?php echo $_SESSION['settings']['idle_timeout_minutes'] ?? 30; ?>" min="5"
+                                    max="240"
+                                    style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                             </div>
                         </div>
                     </div>
                 </div>
                 <div
-                    style="margin-top: 20px; padding: 15px; background: #d1ecf1; border-radius: 8px; border-left: 4px solid #17a2b8;">
-                    <h4 style="color: #0c5460; margin-bottom: 10px;">Audit Logging</h4>
+                    style="margin-top: 20px; padding: 15px; background: var(--info-bg); border-radius: 8px; border-left: 4px solid var(--accent-info);">
+                    <h4 style="color: var(--info-text); margin-bottom: 10px;">Audit Logging</h4>
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                             <input type="checkbox" name="log_all_actions" value="1" <?php echo ($_SESSION['settings']['log_all_actions'] ?? true) ? 'checked' : ''; ?>>
@@ -366,7 +409,7 @@
                     </div>
                 </div>
                 <button type="submit" class="btn"
-                    style="background: #dc3545; color: white; padding: 12px 30px; margin-top: 20px;">🔒 Save
+                    style="background: var(--accent-danger); color: var(--text-on-accent); padding: 12px 30px; margin-top: 20px;">🔒 Save
                     Security
                     Settings</button>
             </form>
@@ -374,20 +417,20 @@
 
         <!-- Editor & Behavior Settings -->
         <div
-            style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <h3 style="color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            style="background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h3 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 24px;">📝</span> Editor & Behavior Settings
             </h3>
             <form method="POST">
                 <input type="hidden" name="action" value="save_editor_settings">
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                        <h4 style="color: #333; margin-bottom: 15px;">Code Editor</h4>
+                    <div style="background: var(--surface-muted); padding: 20px; border-radius: 8px;">
+                        <h4 style="color: var(--text-primary); margin-bottom: 15px;">Code Editor</h4>
                         <div style="display: grid; gap: 12px;">
                             <div>
                                 <label style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 14px;">Editor Theme:</label>
-                                <select name="editor_theme" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                <select name="editor_theme" style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                                     <option value="monokai" <?php echo ($_SESSION['settings']['editor_theme'] ?? 'monokai') == 'monokai' ? 'selected' : ''; ?>>Monokai (Dark)</option>
                                     <option value="github" <?php echo ($_SESSION['settings']['editor_theme'] ?? '') == 'github' ? 'selected' : ''; ?>>GitHub (Light)</option>
                                     <option value="dracula" <?php echo ($_SESSION['settings']['editor_theme'] ?? '') == 'dracula' ? 'selected' : ''; ?>>Dracula (Dark)</option>
@@ -396,7 +439,7 @@
                             </div>
                             <div>
                                 <label style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 14px;">Font Size:</label>
-                                <select name="editor_font_size" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                <select name="editor_font_size" style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                                     <option value="12" <?php echo ($_SESSION['settings']['editor_font_size'] ?? 14) == 12 ? 'selected' : ''; ?>>12px</option>
                                     <option value="14" <?php echo ($_SESSION['settings']['editor_font_size'] ?? 14) == 14 ? 'selected' : ''; ?>>14px</option>
                                     <option value="16" <?php echo ($_SESSION['settings']['editor_font_size'] ?? 14) == 16 ? 'selected' : ''; ?>>16px</option>
@@ -417,8 +460,8 @@
                             </label>
                         </div>
                     </div>
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                        <h4 style="color: #333; margin-bottom: 15px;">Interface Behavior</h4>
+                    <div style="background: var(--surface-muted); padding: 20px; border-radius: 8px;">
+                        <h4 style="color: var(--text-primary); margin-bottom: 15px;">Interface Behavior</h4>
                         <div style="display: grid; gap: 12px;">
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="checkbox" name="auto_refresh" value="1" <?php echo ($_SESSION['settings']['auto_refresh'] ?? false) ? 'checked' : ''; ?>>
@@ -427,7 +470,7 @@
                             <div>
                                 <label style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 14px;">Refresh Interval (seconds):</label>
                                 <input type="number" name="refresh_interval" value="<?php echo $_SESSION['settings']['refresh_interval'] ?? 30; ?>" 
-                                    min="5" max="300" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                    min="5" max="300" style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                             </div>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="checkbox" name="confirm_deletions" value="1" <?php echo ($_SESSION['settings']['confirm_deletions'] ?? true) ? 'checked' : ''; ?>>
@@ -449,23 +492,23 @@
                     </div>
                 </div>
                 <button type="submit" class="btn"
-                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; margin-top: 20px;">💾
+                    style="background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%); color: var(--text-on-accent); padding: 12px 30px; margin-top: 20px;">💾
                     Save Editor Settings</button>
             </form>
         </div>
 
         <!-- Notifications & Alerts Settings -->
         <div
-            style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <h3 style="color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            style="background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h3 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 24px;">🔔</span> Notifications & Alerts
             </h3>
             <form method="POST">
                 <input type="hidden" name="action" value="save_notification_settings">
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; border-left: 4px solid #2196f3;">
-                        <h4 style="color: #1565c0; margin-bottom: 15px;">Alert Preferences</h4>
+                    <div style="background: var(--info-bg); padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-blue-bright);">
+                        <h4 style="color: var(--info-text); margin-bottom: 15px;">Alert Preferences</h4>
                         <div style="display: grid; gap: 10px;">
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="checkbox" name="show_success_messages" value="1" <?php echo ($_SESSION['settings']['show_success_messages'] ?? true) ? 'checked' : ''; ?>>
@@ -486,12 +529,12 @@
                             <div>
                                 <label style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 14px;">Alert Duration (seconds):</label>
                                 <input type="number" name="alert_duration" value="<?php echo $_SESSION['settings']['alert_duration'] ?? 5; ?>" 
-                                    min="2" max="30" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                    min="2" max="30" style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                             </div>
                         </div>
                     </div>
-                    <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #ffc107;">
-                        <h4 style="color: #856404; margin-bottom: 15px;">Sound & Visual</h4>
+                    <div style="background: var(--warning-bg); padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-warning);">
+                        <h4 style="color: var(--warning-text); margin-bottom: 15px;">Sound & Visual</h4>
                         <div style="display: grid; gap: 10px;">
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="checkbox" name="enable_sounds" value="1" <?php echo ($_SESSION['settings']['enable_sounds'] ?? false) ? 'checked' : ''; ?>>
@@ -517,27 +560,27 @@
                     </div>
                 </div>
                 <button type="submit" class="btn"
-                    style="background: #17a2b8; color: white; padding: 12px 30px; margin-top: 20px;">🔔 Save
+                    style="background: var(--accent-info); color: var(--text-on-accent); padding: 12px 30px; margin-top: 20px;">🔔 Save
                     Notification Settings</button>
             </form>
         </div>
 
         <!-- Export & Backup Settings -->
         <div
-            style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <h3 style="color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            style="background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h3 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 24px;">💾</span> Export & Backup Settings
             </h3>
             <form method="POST">
                 <input type="hidden" name="action" value="save_export_settings">
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                        <h4 style="color: #333; margin-bottom: 15px;">Export Preferences</h4>
+                    <div style="background: var(--surface-muted); padding: 20px; border-radius: 8px;">
+                        <h4 style="color: var(--text-primary); margin-bottom: 15px;">Export Preferences</h4>
                         <div style="display: grid; gap: 12px;">
                             <div>
                                 <label style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 14px;">Default Export Format:</label>
-                                <select name="default_export_format" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                <select name="default_export_format" style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                                     <option value="json" <?php echo ($_SESSION['settings']['default_export_format'] ?? 'json') == 'json' ? 'selected' : ''; ?>>JSON</option>
                                     <option value="csv" <?php echo ($_SESSION['settings']['default_export_format'] ?? '') == 'csv' ? 'selected' : ''; ?>>CSV</option>
                                     <option value="excel" <?php echo ($_SESSION['settings']['default_export_format'] ?? '') == 'excel' ? 'selected' : ''; ?>>Excel</option>
@@ -548,11 +591,24 @@
                                 <label style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 14px;">Filename Prefix:</label>
                                 <input type="text" name="export_filename_prefix"
                                     value="<?php echo $_SESSION['settings']['export_filename_prefix'] ?? 'export'; ?>"
-                                    style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                    style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
+                            </div>
+                            <div>
+                                <label style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 14px;">CSV Delimiter:</label>
+                                <select name="csv_delimiter" style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
+                                    <option value=";" <?php echo ($_SESSION['settings']['csv_delimiter'] ?? ';') == ';' ? 'selected' : ''; ?>>Semicolon (;)</option>
+                                    <option value="," <?php echo ($_SESSION['settings']['csv_delimiter'] ?? ';') == ',' ? 'selected' : ''; ?>>Comma (,)</option>
+                                    <option value="tab" <?php echo ($_SESSION['settings']['csv_delimiter'] ?? ';') == 'tab' ? 'selected' : ''; ?>>Tab</option>
+                                    <option value="|" <?php echo ($_SESSION['settings']['csv_delimiter'] ?? ';') == '|' ? 'selected' : ''; ?>>Pipe (|)</option>
+                                </select>
                             </div>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="checkbox" name="include_metadata" value="1" <?php echo ($_SESSION['settings']['include_metadata'] ?? true) ? 'checked' : ''; ?>>
                                 <span style="font-size: 14px;">Include metadata in exports</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" name="csv_include_bom" value="1" <?php echo ($_SESSION['settings']['csv_include_bom'] ?? true) ? 'checked' : ''; ?>>
+                                <span style="font-size: 14px;">Include UTF-8 BOM in CSV</span>
                             </label>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="checkbox" name="compress_exports" value="1" <?php echo ($_SESSION['settings']['compress_exports'] ?? false) ? 'checked' : ''; ?>>
@@ -564,8 +620,8 @@
                             </label>
                         </div>
                     </div>
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                        <h4 style="color: #333; margin-bottom: 15px;">Automatic Backups</h4>
+                    <div style="background: var(--surface-muted); padding: 20px; border-radius: 8px;">
+                        <h4 style="color: var(--text-primary); margin-bottom: 15px;">Automatic Backups</h4>
                         <div style="display: grid; gap: 12px;">
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="checkbox" name="auto_backup" value="1" <?php echo ($_SESSION['settings']['auto_backup'] ?? false) ? 'checked' : ''; ?>>
@@ -573,7 +629,7 @@
                             </label>
                             <div>
                                 <label style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 14px;">Backup Frequency:</label>
-                                <select name="backup_frequency" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                <select name="backup_frequency" style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                                     <option value="daily" <?php echo ($_SESSION['settings']['backup_frequency'] ?? 'weekly') == 'daily' ? 'selected' : ''; ?>>Daily</option>
                                     <option value="weekly" <?php echo ($_SESSION['settings']['backup_frequency'] ?? 'weekly') == 'weekly' ? 'selected' : ''; ?>>Weekly</option>
                                     <option value="monthly" <?php echo ($_SESSION['settings']['backup_frequency'] ?? 'weekly') == 'monthly' ? 'selected' : ''; ?>>Monthly</option>
@@ -582,57 +638,57 @@
                             <div>
                                 <label style="font-weight: 600; margin-bottom: 8px; display: block; font-size: 14px;">Keep Backups (days):</label>
                                 <input type="number" name="backup_retention" value="<?php echo $_SESSION['settings']['backup_retention'] ?? 30; ?>" 
-                                    min="1" max="365" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                    min="1" max="365" style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px;">
                             </div>
                         </div>
                     </div>
                 </div>
                 <button type="submit" class="btn"
-                    style="background: #28a745; color: white; padding: 12px 30px; margin-top: 20px;">💾 Save
+                    style="background: var(--accent-success); color: var(--text-on-accent); padding: 12px 30px; margin-top: 20px;">💾 Save
                     Export Settings</button>
             </form>
         </div>
 
         <!-- System Information -->
         <div
-            style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <h3 style="color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            style="background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h3 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 24px;">💻</span> System Information
             </h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
                 <div
-                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px;">
+                    style="background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%); color: var(--text-on-accent); padding: 20px; border-radius: 10px;">
                     <p style="font-size: 13px; opacity: 0.9; margin-bottom: 5px;">PHP Version</p>
                     <p style="font-size: 24px; font-weight: bold;"><?php echo phpversion(); ?></p>
                 </div>
                 <div
-                    style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 10px;">
+                    style="background: linear-gradient(135deg, var(--gradient-pink-start) 0%, var(--gradient-pink-end) 100%); color: var(--text-on-accent); padding: 20px; border-radius: 10px;">
                     <p style="font-size: 13px; opacity: 0.9; margin-bottom: 5px;">MongoDB Extension</p>
                     <p style="font-size: 24px; font-weight: bold;"><?php echo phpversion('mongodb') ?: 'N/A'; ?></p>
                 </div>
                 <div
-                    style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 10px;">
+                    style="background: linear-gradient(135deg, var(--gradient-sky-start) 0%, var(--gradient-sky-end) 100%); color: var(--text-on-accent); padding: 20px; border-radius: 10px;">
                     <p style="font-size: 13px; opacity: 0.9; margin-bottom: 5px;">Server Software</p>
                     <p style="font-size: 16px; font-weight: bold;">
                         <?php echo $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown'; ?>
                     </p>
                 </div>
                 <div
-                    style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 20px; border-radius: 10px;">
+                    style="background: linear-gradient(135deg, var(--gradient-green-start) 0%, var(--gradient-green-end) 100%); color: var(--text-on-accent); padding: 20px; border-radius: 10px;">
                     <p style="font-size: 13px; opacity: 0.9; margin-bottom: 5px;">Memory Limit</p>
                     <p style="font-size: 24px; font-weight: bold;"><?php echo ini_get('memory_limit'); ?></p>
                 </div>
             </div>
 
-            <div style="margin-top: 20px; background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                <h4 style="color: #333; margin-bottom: 15px;">Loaded Extensions</h4>
+            <div style="margin-top: 20px; background: var(--surface-muted); padding: 20px; border-radius: 8px;">
+                <h4 style="color: var(--text-primary); margin-bottom: 15px;">Loaded Extensions</h4>
                 <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                     <?php
                     $extensions = ['mongodb', 'json', 'mbstring', 'openssl', 'curl', 'session', 'fileinfo'];
                     foreach ($extensions as $ext) {
                         $loaded = extension_loaded($ext);
-                        $bgColor = $loaded ? '#d4edda' : '#f8d7da';
-                        $textColor = $loaded ? '#155724' : '#721c24';
+                        $bgColor = $loaded ? 'var(--success-bg)' : 'var(--danger-bg)';
+                        $textColor = $loaded ? 'var(--success-text)' : 'var(--danger-text)';
                         $icon = $loaded ? '✅' : '❌';
                         echo '<span style="background: ' . $bgColor . '; color: ' . $textColor . '; padding: 6px 12px; border-radius: 16px; font-size: 12px; font-weight: 600;">' . $icon . ' ' . $ext . '</span>';
                     }
@@ -643,14 +699,14 @@
 
         <!-- Export/Import Settings -->
         <div
-            style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <h3 style="color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            style="background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h3 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 24px;">📦</span> Settings Management
             </h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; border-left: 4px solid #4caf50;">
-                    <h4 style="color: #2e7d32; margin-bottom: 15px;">📤 Export Settings</h4>
-                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Download all your application
+                <div style="background: var(--success-bg); padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-success);">
+                    <h4 style="color: var(--success-text); margin-bottom: 15px;">📤 Export Settings</h4>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 15px;">Download all your application
                         settings
                         as
                         a JSON file for backup or migration.</p>
@@ -658,23 +714,23 @@
                         <input type="hidden" name="action" value="export_settings">
                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                         <button type="submit" class="btn"
-                            style="background: #4caf50; color: white; width: 100%; padding: 12px;">📥 Export
+                            style="background: var(--accent-success); color: var(--text-on-accent); width: 100%; padding: 12px;">📥 Export
                             Settings
                             JSON</button>
                     </form>
                 </div>
-                <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; border-left: 4px solid #2196f3;">
-                    <h4 style="color: #1565c0; margin-bottom: 15px;">📥 Import Settings</h4>
-                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Upload a settings JSON file to
+                <div style="background: var(--info-bg); padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-blue-bright);">
+                    <h4 style="color: var(--info-text); margin-bottom: 15px;">📥 Import Settings</h4>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 15px;">Upload a settings JSON file to
                         restore
                         your configuration.</p>
                     <form method="POST" enctype="multipart/form-data">
                         <input type="hidden" name="action" value="import_settings">
                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                         <input type="file" name="settings_file" accept=".json" required
-                            style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px; margin-bottom: 10px;">
+                            style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 6px; margin-bottom: 10px;">
                         <button type="submit" class="btn"
-                            style="background: #2196f3; color: white; width: 100%; padding: 12px;">⬆️ Import
+                            style="background: var(--accent-blue-bright); color: var(--text-on-accent); width: 100%; padding: 12px;">⬆️ Import
                             Settings</button>
                     </form>
                 </div>
@@ -683,15 +739,15 @@
 
         <!-- Danger Zone -->
         <div
-            style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid #dc3545;">
-            <h3 style="color: #dc3545; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            style="background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid var(--accent-danger);">
+            <h3 style="color: var(--accent-danger); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 24px;">⚠️</span> Danger Zone
             </h3>
-            <div style="background: #f8d7da; padding: 20px; border-radius: 8px; border-left: 4px solid #dc3545;">
+            <div style="background: var(--danger-bg); padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-danger);">
                 <div style="display: grid; gap: 15px;">
                     <div>
-                        <h4 style="color: #721c24; margin-bottom: 10px;">🗑️ Clear Application Cache</h4>
-                        <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Remove all cached data
+                        <h4 style="color: var(--danger-text); margin-bottom: 10px;">🗑️ Clear Application Cache</h4>
+                        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 10px;">Remove all cached data
                             including
                             query
                             results and schema information.</p>
@@ -699,13 +755,13 @@
                             <input type="hidden" name="action" value="clear_cache">
                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                             <button type="submit" class="btn"
-                                style="background: #ffc107; color: #333; padding: 10px 20px;">🗑️ Clear
+                                style="background: var(--accent-warning); color: var(--text-primary); padding: 10px 20px;">🗑️ Clear
                                 Cache</button>
                         </form>
                     </div>
-                    <div style="border-top: 1px solid #f5c6cb; padding-top: 15px;">
-                        <h4 style="color: #721c24; margin-bottom: 10px;">🔄 Reset All Settings</h4>
-                        <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Reset all application settings
+                    <div style="border-top: 1px solid var(--danger-border); padding-top: 15px;">
+                        <h4 style="color: var(--danger-text); margin-bottom: 10px;">🔄 Reset All Settings</h4>
+                        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 10px;">Reset all application settings
                             to
                             default values. This cannot be undone!</p>
                         <form method="POST" style="display: inline;"
@@ -713,18 +769,21 @@
                             <input type="hidden" name="action" value="reset_settings">
                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                             <button type="submit" class="btn"
-                                style="background: #dc3545; color: white; padding: 10px 20px;">⚠️ Reset to
+                                style="background: var(--accent-danger); color: var(--text-on-accent); padding: 10px 20px;">⚠️ Reset to
                                 Defaults</button>
                         </form>
                     </div>
-                    <div style="border-top: 1px solid #f5c6cb; padding-top: 15px;">
-                        <h4 style="color: #721c24; margin-bottom: 10px;">🧹 Clear Session Data</h4>
-                        <p style="color: #666; font-size: 14px; margin-bottom: 10px;">End current session and clear
+                    <div style="border-top: 1px solid var(--danger-border); padding-top: 15px;">
+                        <h4 style="color: var(--danger-text); margin-bottom: 10px;">🧹 Clear Session Data</h4>
+                        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 10px;">End current session and clear
                             all
                             stored session data.</p>
-                        <a href="templates/connection.php" class="btn"
-                            style="background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; display: inline-block;">🚪
-                            Logout & Clear Session</a>
+                        <form method="POST" style="display: inline;">
+                            <input type="hidden" name="action" value="logout">
+                            <button type="submit" class="btn"
+                                style="background: var(--text-muted); color: var(--text-on-accent); padding: 10px 20px;">🚪
+                                Logout & Clear Session</button>
+                        </form>
                     </div>
                 </div>
             </div>

@@ -21,7 +21,7 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
             background-attachment: fixed;
             min-height: 100vh;
             display: flex;
@@ -60,7 +60,7 @@
         }
         
         .auth-header h1 {
-            color: #333;
+            color: var(--text-primary);
             font-size: 28px;
             margin-bottom: 8px;
             display: flex;
@@ -70,7 +70,7 @@
         }
         
         .auth-header p {
-            color: #666;
+            color: var(--text-secondary);
             font-size: 14px;
         }
         
@@ -81,7 +81,7 @@
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #333;
+            color: var(--text-primary);
             font-weight: 600;
             font-size: 13px;
         }
@@ -89,7 +89,7 @@
         .form-group input {
             width: 100%;
             padding: 12px 14px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid var(--border-color);
             border-radius: 8px;
             font-size: 14px;
             transition: border-color 0.2s;
@@ -98,15 +98,15 @@
         
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--accent-primary);
         }
         
         .form-group input::placeholder {
-            color: #999;
+            color: var(--text-muted);
         }
         
         .error-message {
-            color: #dc3545;
+            color: var(--accent-danger);
             font-size: 13px;
             margin-top: 5px;
             display: none;
@@ -117,7 +117,7 @@
         }
         
         .success-message {
-            color: #28a745;
+            color: var(--accent-success);
             font-size: 13px;
             margin-top: 5px;
             display: none;
@@ -128,14 +128,14 @@
         }
         
         .form-group input.error {
-            border-color: #dc3545;
+            border-color: var(--accent-danger);
         }
         
         .submit-btn {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            color: var(--text-on-accent);
             border: none;
             border-radius: 8px;
             font-size: 14px;
@@ -157,12 +157,12 @@
         .toggle-form {
             text-align: center;
             margin-top: 20px;
-            color: #666;
+            color: var(--text-secondary);
             font-size: 13px;
         }
         
         .toggle-form a {
-            color: #667eea;
+            color: var(--accent-primary);
             text-decoration: none;
             font-weight: 600;
             cursor: pointer;
@@ -182,7 +182,7 @@
         
         .password-strength {
             height: 4px;
-            background: #e0e0e0;
+            background: var(--border-color);
             border-radius: 2px;
             margin-top: 8px;
             overflow: hidden;
@@ -192,17 +192,17 @@
             height: 100%;
             width: 0;
             transition: width 0.3s, background-color 0.3s;
-            background-color: #dc3545;
+            background-color: var(--accent-danger);
         }
         
         .info-box {
-            background: #e7f3ff;
-            border-left: 4px solid #17a2b8;
+            background: var(--info-bg);
+            border-left: 4px solid var(--accent-info);
             padding: 12px;
             border-radius: 4px;
             margin-bottom: 20px;
             font-size: 13px;
-            color: #004085;
+            color: var(--info-text);
         }
         
         .info-box strong {
@@ -292,7 +292,7 @@
             </form>
             
             <?php if (isset($_SESSION['auth_message'])): ?>
-                <div style="text-align: center; margin-top: 20px; padding: 12px; border-radius: 8px; <?php echo isset($_SESSION['auth_success']) && $_SESSION['auth_success'] ? 'background: #d4edda; color: #155724;' : 'background: #f8d7da; color: #721c24;'; ?>">
+                <div style="text-align: center; margin-top: 20px; padding: 12px; border-radius: 8px; <?php echo isset($_SESSION['auth_success']) && $_SESSION['auth_success'] ? 'background: var(--success-bg); color: var(--success-text);' : 'background: var(--danger-bg); color: var(--danger-text);'; ?>">
                     <?php echo htmlspecialchars($_SESSION['auth_message']); ?>
                 </div>
                 <?php unset($_SESSION['auth_message']); unset($_SESSION['auth_success']); ?>
@@ -319,10 +319,10 @@
             
             bar.style.width = Math.min(strength, 100) + '%';
             
-            if (strength < 30) bar.style.backgroundColor = '#dc3545';
-            else if (strength < 60) bar.style.backgroundColor = '#ffc107';
-            else if (strength < 80) bar.style.backgroundColor = '#17a2b8';
-            else bar.style.backgroundColor = '#28a745';
+            if (strength < 30) bar.style.backgroundColor = 'var(--accent-danger)';
+            else if (strength < 60) bar.style.backgroundColor = 'var(--accent-warning)';
+            else if (strength < 80) bar.style.backgroundColor = 'var(--accent-info)';
+            else bar.style.backgroundColor = 'var(--accent-success)';
         }
         
         // Client-side validation
