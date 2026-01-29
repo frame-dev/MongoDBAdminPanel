@@ -706,20 +706,34 @@ require_once 'config/security.php';
         }
         
         function toggleView() {
-            const btn = document.getElementById('viewToggleBtn');
             const tableView = document.getElementById('tableView');
-            const cardView = document.getElementById('cardView');
-            if (tableView && cardView) {
-                if (tableView.style.display === 'none') {
-                    tableView.style.display = 'block';
-                    cardView.style.display = 'none';
-                    btn.textContent = '📇 Card View';
-                } else {
+            const gridView = document.getElementById('gridView');
+            const viewIcon = document.getElementById('viewIcon');
+            const viewText = document.getElementById('viewText');
+            if (!tableView || !gridView) {
+                return;
+            }
+
+            const nextMode = tableView.style.display === 'none' ? 'table' : 'grid';
+            if (typeof applyViewMode === 'function') {
+                applyViewMode(nextMode);
+            } else {
+                if (nextMode === 'grid') {
                     tableView.style.display = 'none';
-                    cardView.style.display = 'grid';
-                    btn.textContent = '📊 Table View';
+                    gridView.style.display = 'block';
+                    if (viewIcon) viewIcon.textContent = '📋';
+                    if (viewText) viewText.textContent = 'Table View';
+                } else {
+                    tableView.style.display = 'block';
+                    gridView.style.display = 'none';
+                    if (viewIcon) viewIcon.textContent = '📊';
+                    if (viewText) viewText.textContent = 'Grid View';
                 }
             }
+
+            try {
+                localStorage.setItem('viewMode', nextMode);
+            } catch (e) {}
         }
         
         function toggleSelectAll(checkbox) {

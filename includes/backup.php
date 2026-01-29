@@ -15,7 +15,8 @@
 
 // Create full database backup
 require_once 'config/security.php';
-function createDatabaseBackup($database, $backupName = null) {
+function createDatabaseBackup($database, $backupName = null): array
+{
     try {
         if (!$backupName) {
             $backupName = 'backup_' . date('Y-m-d_H-i-s');
